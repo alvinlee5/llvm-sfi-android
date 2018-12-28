@@ -20,11 +20,11 @@ FunctionManager::FunctionManager(Module *mod)
 	 PointerType* voidPtrType =
 			 PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
 	 mmapFuncParams.push_back(voidPtrType);
-	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 64));
 	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
 	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
 	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
-	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 64));
+	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
+	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
 
 	 // Create the function type, used for creating the function
 	 // specifies return type, parameters, variable arguments
@@ -90,20 +90,20 @@ Instruction* FunctionManager::replaceMallocWithMmap(Instruction *inst/*, MallocA
 	// is probably required)
 	ConstantInt* addrToMapMem = ConstantInt::get(m_pMod->getContext(), APInt(64, StringRef("196608"), 10));
 	Constant* ptrToMmapAddr = ConstantExpr::getCast(Instruction::IntToPtr, addrToMapMem, voidPtrType);
-	ConstantInt* bytesToAlloc = ConstantInt::get(m_pMod->getContext(), APInt(64, StringRef("4"), 10));
+	ConstantInt* bytesToAlloc = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("4"), 10));
 	ConstantInt* mmap_prot_arg = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("3"), 10));
 	ConstantInt* mmap_flags_arg = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("50"), 10));
 	ConstantInt* mmap_fd_arg = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("-1"), 10));
-	ConstantInt* mmap_offset_arg = ConstantInt::get(m_pMod->getContext(), APInt(64, StringRef("0"), 10));
+	ConstantInt* mmap_offset_arg = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("0"), 10));
 
-	//AllocaInst* pMmapAddr = new AllocaInst(voidPtrType, 0, "pMmapAddr", inst);
-	//pMmapAddr->setAlignment(8);
-	//StoreInst* void_17 = new StoreInst(ptrToMmapAddr, pMmapAddr, false, inst);
-	//void_17->setAlignment(8);
-	//LoadInst* mmapAddr = new LoadInst(pMmapAddr, "", false, inst);
-	//mmapAddr->setAlignment(8);
+	AllocaInst* pMmapAddr = new AllocaInst(voidPtrType, 0, "pMmapAddr", inst);
+	pMmapAddr->setAlignment(8);
+	StoreInst* void_17 = new StoreInst(ptrToMmapAddr, pMmapAddr, false, inst);
+	void_17->setAlignment(8);
+	LoadInst* mmapAddr = new LoadInst(pMmapAddr, "", false, inst);
+	mmapAddr->setAlignment(8);
 	std::vector<Value*> mmapFuncParams;
-	mmapFuncParams.push_back(ptrToMmapAddr/*mmapAddr*/);
+	mmapFuncParams.push_back(/*ptrToMmapAddr*/mmapAddr);
 	mmapFuncParams.push_back(bytesToAlloc);
 	mmapFuncParams.push_back(mmap_prot_arg);
 	mmapFuncParams.push_back(mmap_flags_arg);
@@ -206,6 +206,10 @@ bool FunctionManager::isMmapCall(CallInst* callInst)
 			errs() << *v;
 			errs() << "\n";
 			errs() << *sv;
+			errs() << "\n";
+			errs() << callInst->getCallingConv();
+			errs() <<"\n";
+			errs() << callInst->getTailCallKind();
 			errs() << "\n";
 			return true;
 		}

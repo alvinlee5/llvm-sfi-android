@@ -87,8 +87,19 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					{
 						FunctionManager::MallocArgs args = funcManager.extractMallocArgs(callInst);
 						Instruction* newInst = funcManager.replaceMallocWithMmap(callInst);
+						CallInst* mmapCall = dyn_cast<CallInst>(newInst);
+						Value* v = mmapCall->getCalledValue();
+						Value* sv = v->stripPointerCasts();
 						errs() << "-------INSERTED MMAP CALL-------\n";
-						errs() << *newInst;
+						errs() << *mmapCall;
+						errs() << "\n";
+						errs() << *v;
+						errs() << "\n";
+						errs() << *sv;
+						errs() << "\n";
+						errs() << mmapCall->getCallingConv();
+						errs() << "\n";
+						errs() << mmapCall->getTailCallKind();
 						errs() << "\n";
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
