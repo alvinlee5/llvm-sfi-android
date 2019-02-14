@@ -3,6 +3,7 @@
  */
 
 #include "FunctionManager.hpp"
+#include "TypeManager.hpp"
 #include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
@@ -33,6 +34,7 @@ namespace {
 
 bool SandboxWritesPass::runOnModule(Module &M)
 {
+	TypeManager typeManager (&M);
 	FunctionManager funcManager(&M);
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
 	{
