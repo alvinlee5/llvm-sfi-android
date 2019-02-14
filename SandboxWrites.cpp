@@ -22,11 +22,23 @@ using namespace llvm;
 namespace {
   struct SandboxWritesPass : public ModulePass {
     static char ID;
-    SandboxWritesPass() : ModulePass(ID) {}
+    SandboxWritesPass() : ModulePass(ID)
+    {
+    	m_pFreeMemBlockHead = NULL;
+    	m_pHaveAllocedMem = NULL;
+    	m_pPtrToHeap = NULL;
+    	m_pSizeOfHeap = NULL;
+    }
     virtual bool runOnModule(Module &M);
     void SandBoxWrites(Module *pMod, StoreInst* inst, Function::iterator *BB,
     		Value* upperBound, Value* lowerBound);
+    void InsertGlobalVars(Module *pMod, TypeManager* typeManager);
 
+    // Make inserted globals members for now for easy access
+    GlobalVariable *m_pFreeMemBlockHead;
+    GlobalVariable *m_pHaveAllocedMem;
+    GlobalVariable *m_pPtrToHeap;
+    GlobalVariable *m_pSizeOfHeap;
   };
 }
 
@@ -35,6 +47,7 @@ namespace {
 bool SandboxWritesPass::runOnModule(Module &M)
 {
 	TypeManager typeManager (&M);
+	InsertGlobalVars(&M, &typeManager);
 	FunctionManager funcManager(&M);
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
 	{
@@ -200,6 +213,55 @@ void SandboxWritesPass::SandBoxWrites(Module *pMod, StoreInst* inst, Function::i
 	StoreInst *store_inst2 = new StoreInst(const_int, inst->getOperand(1),
 			innerIfBB->getTerminator());
 
+}
+
+void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
+{
+	/*Head of free memory linked list*/
+	m_pFreeMemBlockHead = new GlobalVariable(/*Module=*/*pMod,
+			 /*Type=*/typeManager->GetFreeMemBlockPtTy(),
+			 /*isConstant=*/false,
+			 /*Linkage=*/GlobalValue::ExternalLinkage,
+			 /*Initializer=*/0, // has initializer, specified below
+			 /*Name=*/"llvm_head");
+	m_pFreeMemBlockHead->setAlignment(8);
+	m_pFreeMemBlockHead->setInitializer(typeManager->GetFreeMemBlockNull());
+
+	/*Boolean to keep track if mem has been alloced*/
+	m_pHaveAllocedMem = new GlobalVariable(/*Module=*/*pMod,
+			 /*Type=*/IntegerType::get(pMod->getContext(), 32),
+			 /*isConstant=*/false,
+			 /*Linkage=*/GlobalValue::ExternalLinkage,
+			 /*Initializer=*/0, // has initializer, specified below
+			 /*Name=*/"llvm_haveAllocedMem");
+	m_pHaveAllocedMem->setAlignment(4);
+	ConstantInt* const_int32_val0 = ConstantInt::get(pMod->getContext(),
+			APInt(32, StringRef("0"), 10));
+	m_pHaveAllocedMem->setInitializer(const_int32_val0);
+
+	/* Size of sfi heap*/
+	m_pSizeOfHeap = new GlobalVariable(/*Module=*/*pMod,
+	/*Type=*/IntegerType::get(pMod->getContext(), 64),
+	/*isConstant=*/false,
+	/*Linkage=*/GlobalValue::ExternalLinkage,
+	/*Initializer=*/0, // has initializer, specified below
+	/*Name=*/"llvm_sizeOfHeap");
+	m_pSizeOfHeap->setAlignment(8);
+	ConstantInt* const_int64_22 = ConstantInt::get(pMod->getContext(),
+		 APInt(64, StringRef("20480"), 10));
+	m_pSizeOfHeap->setInitializer(const_int64_22);
+
+	/* Pointer to beginning of sfi heap */
+	PointerType* voidPtrType = PointerType::get(IntegerType::get(pMod->getContext(), 8), 0);
+	m_pPtrToHeap = new GlobalVariable(/*Module=*/*pMod,
+	/*Type=*/voidPtrType,
+	/*isConstant=*/false,
+	/*Linkage=*/GlobalValue::ExternalLinkage,
+	/*Initializer=*/0, // has initializer, specified below
+	/*Name=*/"llvm_ptrToHeap");
+	m_pPtrToHeap->setAlignment(8);
+	ConstantPointerNull* nullForVoidPtr = ConstantPointerNull::get(voidPtrType);
+	m_pPtrToHeap->setInitializer(nullForVoidPtr);
 }
 
 char SandboxWritesPass::ID = 0;
