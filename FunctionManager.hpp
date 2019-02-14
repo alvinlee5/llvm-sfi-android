@@ -37,15 +37,24 @@ class FunctionManager
 		MallocArgs extractMallocArgs(CallInst *callInst);
 
 
+		CallInst* insertPrintfCall(Value *val, bool printPtr, /*InsertBefore*/ Instruction *inst);
 		void testFunction();
 
 	//members
 	private:
 		Function *m_pFuncMmap;
+		Function *m_pFuncPrintf;
 		Module *m_pMod;
+
+	    // Only needed in FunctionManager, so not defined in
+	    // SandboxWrites
+	    GlobalVariable *m_pPrintfStrPtr;
+	    GlobalVariable *m_pPrintfStrInt;
 
 	// helpers
 	private:
+		void declareMmap();
+		void declarePrintf();
 
 
 };

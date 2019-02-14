@@ -12,19 +12,50 @@
 
 using namespace llvm;
 
-FunctionManager::FunctionManager(Module *mod)
+FunctionManager::FunctionManager(Module *pMod):m_pMod(pMod)
 {
-	m_pMod = mod;
+	declareMmap();
+	declarePrintf();
+
+	// Initialize Global variables (global strings for printf)
+	// Probably should put this in a function call
+	ArrayType* ArrayTy_13Elements = ArrayType::get(IntegerType::get(m_pMod->getContext(), 8), 13);
+	m_pPrintfStrPtr = new GlobalVariable(/*Module=*/*m_pMod,
+	/*Type=*/ArrayTy_13Elements,
+	/*isConstant=*/true,
+	/*Linkage=*/GlobalValue::PrivateLinkage,
+	/*Initializer=*/0, // has initializer, specified below
+	/*Name=*/"llvm_.str");
+	m_pPrintfStrPtr->setAlignment(1);
+	Constant *printPtrStr = ConstantDataArray::getString(m_pMod->getContext(),
+			"Pointer: %p\x0A", true);
+	m_pPrintfStrPtr->setInitializer(printPtrStr);
+
+	ArrayType* ArrayTy_11Elements = ArrayType::get(IntegerType::get(m_pMod->getContext(), 8), 11);
+	m_pPrintfStrInt = new GlobalVariable(/*Module=*/*m_pMod,
+	/*Type=*/ArrayTy_11Elements,
+	/*isConstant=*/true,
+	/*Linkage=*/GlobalValue::PrivateLinkage,
+	/*Initializer=*/0, // has initializer, specified below
+	/*Name=*/"llvm_.str.1");
+	m_pPrintfStrInt->setAlignment(1);
+	Constant *printIntStr = ConstantDataArray::getString(m_pMod->getContext(),
+			"Value: %d\x0A", true);
+	m_pPrintfStrInt->setInitializer(printIntStr);
+}
+
+void FunctionManager::declareMmap()
+{
 	// Put function arguments into vector
 	 std::vector<Type*> mmapFuncParams;
 	 PointerType* voidPtrType =
-			 PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+			 PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
 	 mmapFuncParams.push_back(voidPtrType);
-	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
-	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
-	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
-	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
-	 mmapFuncParams.push_back(IntegerType::get(mod->getContext(), 32));
+	 mmapFuncParams.push_back(IntegerType::get(m_pMod->getContext(), 32));
+	 mmapFuncParams.push_back(IntegerType::get(m_pMod->getContext(), 32));
+	 mmapFuncParams.push_back(IntegerType::get(m_pMod->getContext(), 32));
+	 mmapFuncParams.push_back(IntegerType::get(m_pMod->getContext(), 32));
+	 mmapFuncParams.push_back(IntegerType::get(m_pMod->getContext(), 32));
 
 	 // Create the function type, used for creating the function
 	 // specifies return type, parameters, variable arguments
@@ -36,14 +67,14 @@ FunctionManager::FunctionManager(Module *mod)
 	 // Get or create function:
 	 // If the function is already in the modules symbol table, we can just get it.
 	 // Otherwise it must be declared for use (i.e. created)
-	 m_pFuncMmap = mod->getFunction("mmap");
+	 m_pFuncMmap = m_pMod->getFunction("mmap");
 	 if (!m_pFuncMmap)
 	 {
 		 errs() << "mmap doesn't exist in the symbol table...?\n";
 		 m_pFuncMmap = Function::Create(
 				  /*Type=*/mmapFuncType,
 				  /*Linkage=*/GlobalValue::ExternalLinkage,
-				  /*Name=*/"mmap", mod); // (external, no body)
+				  /*Name=*/"mmap", m_pMod); // (external, no body)
 		 m_pFuncMmap->setCallingConv(CallingConv::C);
 	 }
 
@@ -54,15 +85,92 @@ FunctionManager::FunctionManager(Module *mod)
 	   {
 	    AttrBuilder B;
 	    B.addAttribute(Attribute::NoUnwind);
-	    PAS = AttributeList::get(mod->getContext(), ~0U, B);
+	    PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
 	   }
 
 	  Attrs.push_back(PAS);
-	  func_mmap_PAL = AttributeList::get(mod->getContext(), Attrs);
+	  func_mmap_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
 
 	 }
 	 m_pFuncMmap->setAttributes(func_mmap_PAL);
+}
 
+void FunctionManager::declarePrintf()
+{
+	PointerType* voidPtrType = PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
+	std::vector<Type*>printfParams;
+	printfParams.push_back(voidPtrType);
+	FunctionType* printfFuncType = FunctionType::get(
+	/*Result=*/IntegerType::get(m_pMod->getContext(), 32),
+	/*Params=*/printfParams,
+	/*isVarArg=*/true);
+
+	m_pFuncPrintf = m_pMod->getFunction("printf");
+	if (!m_pFuncPrintf)
+	{
+		m_pFuncPrintf = Function::Create(
+		/*Type=*/printfFuncType,
+		/*Linkage=*/GlobalValue::ExternalLinkage,
+		/*Name=*/"printf", m_pMod); // (external, no body)
+		m_pFuncPrintf->setCallingConv(CallingConv::C);
+	}
+	AttributeList func_printf_PAL;
+	{
+		SmallVector<AttributeList, 4> Attrs;
+		AttributeList PAS;
+		{
+			AttrBuilder B;
+			PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
+		}
+		Attrs.push_back(PAS);
+		func_printf_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
+
+	}
+	m_pFuncPrintf->setAttributes(func_printf_PAL);
+}
+
+CallInst* FunctionManager::insertPrintfCall(Value *val, bool printPtr, /*InsertBefore*/ Instruction *inst)
+{
+	ConstantInt* const_val_0 = ConstantInt::get(m_pMod->getContext(),
+			APInt(32, StringRef("0"), 10));
+
+	// TODO: The if statements below are duplicated, only need to change constPtrToStr
+	if (printPtr)
+	{
+		// print ptr variable
+		std::vector<Constant*> ptrIndices;
+		ptrIndices.push_back(const_val_0);
+		ptrIndices.push_back(const_val_0);
+		Constant* constPtrToStr = ConstantExpr::getGetElementPtr(nullptr, m_pPrintfStrPtr, ptrIndices);
+
+		std::vector<Value*> printf_params;
+		printf_params.push_back(constPtrToStr);
+		printf_params.push_back(val);
+		CallInst* printfCall = CallInst::Create(m_pFuncPrintf, printf_params, "", inst);
+		printfCall->setCallingConv(CallingConv::C);
+		printfCall->setTailCall(false);
+		AttributeList printfCall_PAL;
+		printfCall->setAttributes(printfCall_PAL);	// probably not necessary
+		return printfCall;
+	}
+	else
+	{
+		// print int variable
+		std::vector<Constant*> ptrIndices;
+		ptrIndices.push_back(const_val_0);
+		ptrIndices.push_back(const_val_0);
+		Constant* constPtrToStr = ConstantExpr::getGetElementPtr(nullptr, m_pPrintfStrInt, ptrIndices);
+
+		std::vector<Value*> printf_params;
+		printf_params.push_back(constPtrToStr);
+		printf_params.push_back(val);
+		CallInst* printfCall = CallInst::Create(m_pFuncPrintf, printf_params, "", inst);
+		printfCall->setCallingConv(CallingConv::C);
+		printfCall->setTailCall(false);
+		AttributeList printfCall_PAL;
+		printfCall->setAttributes(printfCall_PAL);
+		return printfCall;
+	}
 }
 
 /*** Function summary - FunctionManager::replaceMallocWithMmap ***
