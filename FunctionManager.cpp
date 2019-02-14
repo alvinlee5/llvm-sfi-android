@@ -12,7 +12,11 @@
 
 using namespace llvm;
 
-FunctionManager::FunctionManager(Module *pMod):m_pMod(pMod)
+FunctionManager::FunctionManager(Module* pMod, TypeManager *pTypeManager,
+		GlobalVariable *freeMemBlockHead, GlobalVariable *haveAllocedMem,
+		GlobalVariable *ptrToHeap)
+: m_pMod(pMod), m_pTypeManager(pTypeManager), m_pFreeMemBlockHead(freeMemBlockHead),
+  m_pHaveAllocedMem(haveAllocedMem), m_pPtrToHeap(ptrToHeap)
 {
 	declareMmap();
 	declarePrintf();

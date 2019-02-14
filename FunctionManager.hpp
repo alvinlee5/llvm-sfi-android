@@ -2,6 +2,7 @@
  * FunctionManager.hpp
  */
 
+#include "TypeManager.hpp"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
@@ -28,7 +29,9 @@ class FunctionManager
 		};
 
 	public:
-		FunctionManager(Module *mod);
+		FunctionManager(Module *pMod, TypeManager *pTypeManager,
+				GlobalVariable *freeMemBlockHead, GlobalVariable *haveAllocedMem,
+				GlobalVariable *ptrToHeap);
 		Instruction* replaceMallocWithMmap(Instruction *inst);
 		Function* getMmapFunction();
 		bool isMallocCall(CallInst *callInst);
@@ -45,6 +48,12 @@ class FunctionManager
 		Function *m_pFuncMmap;
 		Function *m_pFuncPrintf;
 		Module *m_pMod;
+		TypeManager* m_pTypeManager;
+
+		// Globals we need access to (makes sense to put them here?)
+	    GlobalVariable *m_pFreeMemBlockHead;
+	    GlobalVariable *m_pHaveAllocedMem;
+	    GlobalVariable *m_pPtrToHeap;
 
 	    // Only needed in FunctionManager, so not defined in
 	    // SandboxWrites
