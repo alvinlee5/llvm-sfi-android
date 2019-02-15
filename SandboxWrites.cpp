@@ -50,6 +50,20 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			m_pPtrToHeap);
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
 	{
+		Function *func = dyn_cast<Function>(F);
+		StringRef funcName1("llvm_add_memory_block");
+
+		if ((func->getName()).equals(funcName1))
+		{
+			// We don't want to instrument on our own inserted functions.
+			// We don't want to instrument on system calls either. Even though
+			// the function system calls will be looped through here (if used)
+			// it seems that LLVM doesn't have the BB's or instructions to loop
+			// through. This makes sense since we only compile our own source code,
+			// and not source code which implements system calls like printf.
+			continue;
+		}
+
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
