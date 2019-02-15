@@ -42,8 +42,6 @@ namespace {
   };
 }
 
-
-
 bool SandboxWritesPass::runOnModule(Module &M)
 {
 	TypeManager typeManager (&M);
@@ -57,9 +55,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
-
 /*
-
 				// every time we allocate memory we want to store
 				// the memory address of the allocated memory
 				if (isa<AllocaInst>(Inst))

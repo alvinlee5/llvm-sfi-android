@@ -50,6 +50,9 @@ class FunctionManager
 		Module *m_pMod;
 		TypeManager* m_pTypeManager;
 
+		// custom malloc functions
+		Function *m_pFuncAddMemBlock;
+
 		// Globals we need access to (makes sense to put them here?)
 	    GlobalVariable *m_pFreeMemBlockHead;
 	    GlobalVariable *m_pHaveAllocedMem;
@@ -64,6 +67,9 @@ class FunctionManager
 	private:
 		void declareMmap();
 		void declarePrintf();
+
+		void declareAddMemoryBlock();
+		void defineAddMemoryBlock();
 
 
 };
