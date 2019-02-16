@@ -32,16 +32,22 @@ class FunctionManager
 		FunctionManager(Module *pMod, TypeManager *pTypeManager,
 				GlobalVariable *freeMemBlockHead, GlobalVariable *haveAllocedMem,
 				GlobalVariable *ptrToHeap);
+
+		// mmap related functions
 		Instruction* replaceMallocWithMmap(Instruction *inst);
 		Function* getMmapFunction();
+
+		// Malloc related calls
 		bool isMallocCall(CallInst *callInst);
 		bool isFreeCall(CallInst *callInst);
 		bool isMmapCall(CallInst *callInst);
 		MallocArgs extractMallocArgs(CallInst *callInst);
 
+		// custom malloc functions
 		CallInst* insertAddMemoryBlockCall(/*InsertBefore */Instruction *inst, Value *param); // for testing
+
 		CallInst* insertPrintfCall(Value *val, bool printPtr, /*InsertBefore*/ Instruction *inst);
-		void testFunction();
+
 
 	//members
 	private:
@@ -52,6 +58,7 @@ class FunctionManager
 
 		// custom malloc functions
 		Function *m_pFuncAddMemBlock;
+		Function *m_pFuncSplitMemBlock;
 
 		// Globals we need access to (makes sense to put them here?)
 	    GlobalVariable *m_pFreeMemBlockHead;
@@ -71,7 +78,8 @@ class FunctionManager
 		void declareAddMemoryBlock();
 		void defineAddMemoryBlock();
 
-
+		void declareSplitMemBlock();
+		void defineSplitMemBlock();
 };
 
 

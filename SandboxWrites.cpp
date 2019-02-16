@@ -141,7 +141,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 
 					if (funcManager.isMmapCall(callInst))
 					{
-
+/*
 						// Test for inserted AddMemoryBlock()
 						AllocaInst* secBlock = new AllocaInst(typeManager.GetFreeMemBlockPtTy(),
 								0, "secBlock", callInst->getNextNode());
@@ -171,6 +171,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 
 						LoadInst *load = new LoadInst(secBlock, "", false, last->getNextNode());
 						funcManager.insertAddMemoryBlockCall(load->getNextNode(), load);
+						*/
 					}
 				}
 			}

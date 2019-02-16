@@ -24,6 +24,9 @@ FunctionManager::FunctionManager(Module* pMod, TypeManager *pTypeManager,
 	declareAddMemoryBlock();
 	defineAddMemoryBlock();
 
+	declareSplitMemBlock();
+	defineSplitMemBlock();
+
 	// Initialize Global variables (global strings for printf)
 	// Probably should put this in a function call
 	ArrayType* ArrayTy_13Elements = ArrayType::get(IntegerType::get(m_pMod->getContext(), 8), 13);
@@ -393,6 +396,119 @@ void FunctionManager::defineAddMemoryBlock()
 	ReturnInst::Create(m_pMod->getContext(), label_33);
 }
 
+void FunctionManager::declareSplitMemBlock()
+{
+	std::vector<Type*>splitMemBlock_Args;
+	splitMemBlock_Args.push_back(m_pTypeManager->GetFreeMemBlockPtTy());
+	splitMemBlock_Args.push_back(IntegerType::get(m_pMod->getContext(), 32));
+	FunctionType* splitMemBlockType = FunctionType::get(
+	/*Result=*/m_pTypeManager->GetFreeMemBlockPtTy(),
+	/*Params=*/splitMemBlock_Args,
+	/*isVarArg=*/false);
+
+	m_pFuncSplitMemBlock = m_pMod->getFunction("llvm_split_memory_block");
+	if (!m_pFuncSplitMemBlock)
+	{
+		m_pFuncSplitMemBlock = Function::Create(
+				  /*Type=*/splitMemBlockType,
+				  /*Linkage=*/GlobalValue::ExternalLinkage,
+				  /*Name=*/"llvm_split_memory_block", m_pMod);
+		m_pFuncSplitMemBlock->setCallingConv(CallingConv::C);
+	}
+	AttributeList func_split_PAL;
+	{
+		SmallVector<AttributeList, 4> Attrs;
+		AttributeList PAS;
+		{
+			AttrBuilder B;
+			B.addAttribute(Attribute::NoUnwind);
+			B.addAttribute(Attribute::UWTable);
+			PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
+		}
+
+		Attrs.push_back(PAS);
+		func_split_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
+	}
+	m_pFuncSplitMemBlock->setAttributes(func_split_PAL);
+}
+
+void FunctionManager::defineSplitMemBlock()
+{
+	PointerType* voidPtrType =
+		 PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
+	ConstantInt* int_val_0 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("0"), 10));
+	// This is the size of block_t, need to be careful in case we change the structure and the
+	// size of the struct changes.
+	ConstantInt* int_val_12 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("12"), 10));
+
+	Function::arg_iterator args = m_pFuncSplitMemBlock->arg_begin();
+	Value* ptr_b = &(*args);
+	ptr_b->setName("b");
+	args++;
+	Value *size = &(*args);
+	size->setName("size");
+
+	BasicBlock* label_12 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncSplitMemBlock,0);
+
+	// Block  (label_12)
+	AllocaInst* ptr_13 = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "", label_12);
+	ptr_13->setAlignment(4);
+	AllocaInst* ptr_14 = new AllocaInst(IntegerType::get(m_pMod->getContext(), 32), 0, "", label_12);
+	ptr_14->setAlignment(4);
+	AllocaInst* ptr_mem_block = new AllocaInst(voidPtrType, 0, "mem_block", label_12);
+	ptr_mem_block->setAlignment(4);
+	AllocaInst* ptr_newptr = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "newptr", label_12);
+	ptr_newptr->setAlignment(4);
+	StoreInst* void_15 = new StoreInst(ptr_b, ptr_13, false, label_12);
+	void_15->setAlignment(4);
+	StoreInst* void_16 = new StoreInst(size, ptr_14, false, label_12);
+	void_16->setAlignment(4);
+	LoadInst* ptr_17 = new LoadInst(ptr_13, "", false, label_12);
+	ptr_17->setAlignment(4);
+	CastInst* int64_18 = new PtrToIntInst(ptr_17, IntegerType::get(m_pMod->getContext(), 32), "", label_12);
+	BinaryOperator* int64_19 = BinaryOperator::Create(Instruction::Add, int64_18, int_val_12, "", label_12);
+	CastInst* ptr_20 = new IntToPtrInst(int64_19, voidPtrType, "", label_12);
+	StoreInst* void_21 = new StoreInst(ptr_20, ptr_mem_block, false, label_12);
+	void_21->setAlignment(4);
+	LoadInst* ptr_22 = new LoadInst(ptr_mem_block, "", false, label_12);
+	ptr_22->setAlignment(4);
+	CastInst* int64_23 = new PtrToIntInst(ptr_22, IntegerType::get(m_pMod->getContext(), 32), "", label_12);
+	LoadInst* int64_24 = new LoadInst(ptr_14, "", false, label_12);
+	int64_24->setAlignment(4);
+	BinaryOperator* int64_25 = BinaryOperator::Create(Instruction::Add, int64_23, int64_24, "", label_12);
+	CastInst* ptr_26 = new IntToPtrInst(int64_25, m_pTypeManager->GetFreeMemBlockPtTy(), "", label_12);
+	StoreInst* void_27 = new StoreInst(ptr_26, ptr_newptr, false, label_12);
+	void_27->setAlignment(4);
+	LoadInst* ptr_28 = new LoadInst(ptr_13, "", false, label_12);
+	ptr_28->setAlignment(4);
+	GetElementPtrInst* ptr_29 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_28, {int_val_0, int_val_0}, "", label_12);
+	LoadInst* int64_30 = new LoadInst(ptr_29, "", false, label_12);
+	int64_30->setAlignment(4);
+	LoadInst* int64_31 = new LoadInst(ptr_14, "", false, label_12);
+	int64_31->setAlignment(4);
+	BinaryOperator* int64_32 = BinaryOperator::Create(Instruction::Add, int64_31, int_val_12, "", label_12);
+	BinaryOperator* int64_33 = BinaryOperator::Create(Instruction::Sub, int64_30, int64_32, "", label_12);
+	LoadInst* ptr_34 = new LoadInst(ptr_newptr, "", false, label_12);
+	ptr_34->setAlignment(4);
+	GetElementPtrInst* ptr_35 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_34, {int_val_0, int_val_0}, "", label_12);
+	StoreInst* void_36 = new StoreInst(int64_33, ptr_35, false, label_12);
+	void_36->setAlignment(4);
+	LoadInst* int64_37 = new LoadInst(ptr_14, "", false, label_12);
+	int64_37->setAlignment(4);
+	LoadInst* ptr_38 = new LoadInst(ptr_13, "", false, label_12);
+	ptr_38->setAlignment(4);
+	GetElementPtrInst* ptr_39 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_38, {int_val_0, int_val_0}, "", label_12);
+	StoreInst* void_40 = new StoreInst(int64_37, ptr_39, false, label_12);
+	void_40->setAlignment(4);
+	LoadInst* ptr_41 = new LoadInst(ptr_newptr, "", false, label_12);
+	ptr_41->setAlignment(4);
+	ReturnInst::Create(m_pMod->getContext(), ptr_41, label_12);
+
+}
+
 /*** Function summary - FunctionManager::replaceMallocWithMmap ***
 Takes in an instruction, and replaces it with a call to
 before the given instruction.
@@ -590,10 +706,5 @@ CallInst* FunctionManager::insertAddMemoryBlockCall(/*InsertBefore*/Instruction 
 	AttributeList addMemBlockCall_PAL;
 	addMemBlockCall->setAttributes(addMemBlockCall_PAL);
 	return addMemBlockCall;
-}
-
-void FunctionManager::testFunction()
-{
-	printf("Test\n");
 }
 
