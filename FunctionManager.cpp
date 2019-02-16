@@ -27,6 +27,9 @@ FunctionManager::FunctionManager(Module* pMod, TypeManager *pTypeManager,
 	declareSplitMemBlock();
 	defineSplitMemBlock();
 
+	declareRemoveMemBlock();
+	defineRemoveMemBlock();
+
 	// Initialize Global variables (global strings for printf)
 	// Probably should put this in a function call
 	ArrayType* ArrayTy_13Elements = ArrayType::get(IntegerType::get(m_pMod->getContext(), 8), 13);
@@ -507,6 +510,168 @@ void FunctionManager::defineSplitMemBlock()
 	ptr_41->setAlignment(4);
 	ReturnInst::Create(m_pMod->getContext(), ptr_41, label_12);
 
+}
+
+void FunctionManager::declareRemoveMemBlock()
+{
+	std::vector<Type*>removeMemBlock_Args;
+	removeMemBlock_Args.push_back(m_pTypeManager->GetFreeMemBlockPtTy());
+	FunctionType* removeMemBlockTy = FunctionType::get(
+	/*Result=*/Type::getVoidTy(m_pMod->getContext()),
+	/*Params=*/removeMemBlock_Args,
+	/*isVarArg=*/false);
+
+	m_pFuncRemovemMemBlock = m_pMod->getFunction("llvm_remove_memory_block");
+	if (!m_pFuncRemovemMemBlock) {
+		m_pFuncRemovemMemBlock = Function::Create(
+		/*Type=*/removeMemBlockTy,
+		/*Linkage=*/GlobalValue::ExternalLinkage,
+		/*Name=*/"llvm_remove_memory_block", m_pMod);
+		m_pFuncRemovemMemBlock->setCallingConv(CallingConv::C);
+	}
+	AttributeList func_fl_remove_PAL;
+	{
+		SmallVector<AttributeList, 4> Attrs;
+		AttributeList PAS;
+		{
+			AttrBuilder B;
+			B.addAttribute(Attribute::NoUnwind);
+			B.addAttribute(Attribute::UWTable);
+			PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
+		}
+
+		Attrs.push_back(PAS);
+		func_fl_remove_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
+
+	}
+	m_pFuncRemovemMemBlock->setAttributes(func_fl_remove_PAL);
+}
+
+void FunctionManager::defineRemoveMemBlock()
+{
+	ConstantInt* int_val_0 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("0"), 10));
+	ConstantInt* int_val_1 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("1"), 10));
+	ConstantInt* int_val_2 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("2"), 10));
+
+	Function::arg_iterator args = m_pFuncRemovemMemBlock->arg_begin();
+	Value* ptr_b_45 = &(*args);
+	ptr_b_45->setName("b");
+
+	BasicBlock* label_46 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_47 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_48 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_49 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_50 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_51 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_52 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_53 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+	BasicBlock* label_54 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncRemovemMemBlock,0);
+
+	// Block  (label_46)
+	AllocaInst* ptr_55 = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "", label_46);
+	ptr_55->setAlignment(4);
+	StoreInst* void_56 = new StoreInst(ptr_b_45, ptr_55, false, label_46);
+	void_56->setAlignment(4);
+	LoadInst* ptr_57 = new LoadInst(ptr_55, "", false, label_46);
+	ptr_57->setAlignment(4);
+	GetElementPtrInst* ptr_58 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_57, {int_val_0, int_val_2}, "", label_46);
+	LoadInst* ptr_59 = new LoadInst(ptr_58, "", false, label_46);
+	ptr_59->setAlignment(4);
+	ICmpInst* int1_60 = new ICmpInst(*label_46, ICmpInst::ICMP_NE, ptr_59,
+			m_pTypeManager->GetFreeMemBlockNull(), "");
+	BranchInst::Create(label_51, label_47, int1_60, label_46);
+
+	// Block  (label_47)
+	LoadInst* ptr_62 = new LoadInst(ptr_55, "", false, label_47);
+	ptr_62->setAlignment(4);
+	GetElementPtrInst* ptr_63 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_62, {int_val_0, int_val_1}, "", label_47);
+	LoadInst* ptr_64 = new LoadInst(ptr_63, "", false, label_47);
+	ptr_64->setAlignment(4);
+	ICmpInst* int1_65 = new ICmpInst(*label_47, ICmpInst::ICMP_NE, ptr_64,
+			m_pTypeManager->GetFreeMemBlockNull(), "");
+	BranchInst::Create(label_48, label_49, int1_65, label_47);
+
+	// Block  (label_48)
+	LoadInst* ptr_67 = new LoadInst(ptr_55, "", false, label_48);
+	ptr_67->setAlignment(4);
+	GetElementPtrInst* ptr_68 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_67, {int_val_0, int_val_1}, "", label_48);
+	LoadInst* ptr_69 = new LoadInst(ptr_68, "", false, label_48);
+	ptr_69->setAlignment(4);
+	StoreInst* void_70 = new StoreInst(ptr_69, m_pFreeMemBlockHead, false, label_48);
+	void_70->setAlignment(4);
+	BranchInst::Create(label_50, label_48);
+
+	// Block  (label_49)
+	StoreInst* void_72 = new StoreInst(m_pTypeManager->GetFreeMemBlockNull(), m_pFreeMemBlockHead, false, label_49);
+	void_72->setAlignment(4);
+	BranchInst::Create(label_50, label_49);
+
+	// Block  (label_50)
+	BranchInst::Create(label_52, label_50);
+
+	// Block  (label_51)
+	LoadInst* ptr_75 = new LoadInst(ptr_55, "", false, label_51);
+	ptr_75->setAlignment(4);
+	GetElementPtrInst* ptr_76 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_75, {int_val_0, int_val_1}, "", label_51);
+	LoadInst* ptr_77 = new LoadInst(ptr_76, "", false, label_51);
+	ptr_77->setAlignment(4);
+	LoadInst* ptr_78 = new LoadInst(ptr_55, "", false, label_51);
+	ptr_78->setAlignment(4);
+	GetElementPtrInst* ptr_79 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_78, {int_val_0, int_val_2}, "", label_51);
+	LoadInst* ptr_80 = new LoadInst(ptr_79, "", false, label_51);
+	ptr_80->setAlignment(4);
+	GetElementPtrInst* ptr_81 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_80, {int_val_0, int_val_1}, "", label_51);
+	StoreInst* void_82 = new StoreInst(ptr_77, ptr_81, false, label_51);
+	void_82->setAlignment(4);
+	BranchInst::Create(label_52, label_51);
+
+	// Block  (label_52)
+	LoadInst* ptr_84 = new LoadInst(ptr_55, "", false, label_52);
+	ptr_84->setAlignment(4);
+	GetElementPtrInst* ptr_85 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_84, {int_val_0, int_val_1}, "", label_52);
+	LoadInst* ptr_86 = new LoadInst(ptr_85, "", false, label_52);
+	ptr_86->setAlignment(4);
+	ICmpInst* int1_87 = new ICmpInst(*label_52, ICmpInst::ICMP_NE, ptr_86, m_pTypeManager->GetFreeMemBlockNull(), "");
+	BranchInst::Create(label_53, label_54, int1_87, label_52);
+
+	// Block  (label_53)
+	LoadInst* ptr_89 = new LoadInst(ptr_55, "", false, label_53);
+	ptr_89->setAlignment(4);
+	GetElementPtrInst* ptr_90 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_89, {int_val_0, int_val_2}, "", label_53);
+	LoadInst* ptr_91 = new LoadInst(ptr_90, "", false, label_53);
+	ptr_91->setAlignment(4);
+	LoadInst* ptr_92 = new LoadInst(ptr_55, "", false, label_53);
+	ptr_92->setAlignment(4);
+	GetElementPtrInst* ptr_93 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_92, {int_val_0, int_val_1}, "", label_53);
+	LoadInst* ptr_94 = new LoadInst(ptr_93, "", false, label_53);
+	ptr_94->setAlignment(4);
+	GetElementPtrInst* ptr_95 = GetElementPtrInst::CreateInBounds(
+			m_pTypeManager->GetFreeMemBlockStructTy(),
+			ptr_94, {int_val_0, int_val_2}, "", label_53);
+	StoreInst* void_96 = new StoreInst(ptr_91, ptr_95, false, label_53);
+	void_96->setAlignment(4);
+	BranchInst::Create(label_54, label_53);
+
+	// Block  (label_54)
+	ReturnInst::Create(m_pMod->getContext(), label_54);
 }
 
 /*** Function summary - FunctionManager::replaceMallocWithMmap ***
