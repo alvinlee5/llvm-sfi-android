@@ -44,6 +44,7 @@ namespace {
 
 bool SandboxWritesPass::runOnModule(Module &M)
 {
+	int count = 0;
 	TypeManager typeManager (&M);
 	InsertGlobalVars(&M, &typeManager);
 	FunctionManager funcManager(&M, &typeManager, m_pFreeMemBlockHead, m_pHaveAllocedMem,
@@ -51,10 +52,15 @@ bool SandboxWritesPass::runOnModule(Module &M)
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
 	{
 		Function *func = dyn_cast<Function>(F);
+		errs() << func;
+		errs() << "\n";
 		StringRef funcName1("llvm_add_memory_block");
 
+		errs() << func->getName();
+		errs() << "\n";
 		if ((func->getName()).equals(funcName1))
 		{
+			errs() <<"Skip\n";
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
 			// the function system calls will be looped through here (if used)
@@ -63,12 +69,19 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			// and not source code which implements system calls like printf.
 			continue;
 		}
-
+		errs() << "Enter";
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
+				if (count == 1)
+				{
+					errs() << *(dyn_cast<Instruction>(Inst));
+					errs() << "\n";
+				}
+				//errs() << *(dyn_cast<Instruction>(Inst));
+				//errs() << "\n";
 /*
 				// every time we allocate memory we want to store
 				// the memory address of the allocated memory
@@ -108,9 +121,9 @@ bool SandboxWritesPass::runOnModule(Module &M)
 				if (isa<CallInst>(Inst))
 				{
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
-					funcManager.isMmapCall(callInst);
 					if (funcManager.isMallocCall(callInst))
 					{
+/*
 						FunctionManager::MallocArgs args = funcManager.extractMallocArgs(callInst);
 						Instruction* newInst = funcManager.replaceMallocWithMmap(callInst);
 						CallInst* mmapCall = dyn_cast<CallInst>(newInst);
@@ -129,8 +142,50 @@ bool SandboxWritesPass::runOnModule(Module &M)
 						errs() << "\n";
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
+*/
+
+					}
+
+					if (funcManager.isMmapCall(callInst))
+					{
+
+						// Test for inserted AddMemoryBlock()
+						AllocaInst* secBlock = new AllocaInst(typeManager.GetFreeMemBlockPtTy(),
+								0, "secBlock", callInst->getNextNode());
+
+						CastInst *bitCast = new BitCastInst(callInst,
+								typeManager.GetFreeMemBlockPtTy(), "", secBlock->getNextNode());
+
+						StoreInst *storeMmapInGvar = new StoreInst(bitCast,
+								m_pFreeMemBlockHead, false, bitCast->getNextNode());
+
+						CastInst* ptrCast = new PtrToIntInst(callInst,
+								IntegerType::get(M.getContext(), 32), "",
+								storeMmapInGvar->getNextNode());
+
+						ConstantInt* int8192 = ConstantInt::get(M.getContext(),
+								APInt(32, StringRef("8192"), 10));
+
+						BinaryOperator* addInst = BinaryOperator::Create(Instruction::Add,
+							  ptrCast, int8192, "", ptrCast->getNextNode());
+
+
+						CastInst* intCast = new IntToPtrInst(addInst,
+								typeManager.GetFreeMemBlockPtTy(), "", addInst->getNextNode());
+
+						StoreInst *last = new StoreInst(intCast, secBlock,
+								typeManager.GetFreeMemBlockPtTy(),
+								false, intCast->getNextNode());
+
+						LoadInst *load = new LoadInst(secBlock, "", false, last->getNextNode());
+						funcManager.insertAddMemoryBlockCall(load->getNextNode(), load);
+
 					}
 				}
+			}
+			if (count == 0 || count == 1)
+			{
+				count++;
 			}
 		}
 	}

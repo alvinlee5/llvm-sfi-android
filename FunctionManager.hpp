@@ -39,7 +39,7 @@ class FunctionManager
 		bool isMmapCall(CallInst *callInst);
 		MallocArgs extractMallocArgs(CallInst *callInst);
 
-
+		CallInst* insertAddMemoryBlockCall(/*InsertBefore */Instruction *inst, Value *param); // for testing
 		CallInst* insertPrintfCall(Value *val, bool printPtr, /*InsertBefore*/ Instruction *inst);
 		void testFunction();
 

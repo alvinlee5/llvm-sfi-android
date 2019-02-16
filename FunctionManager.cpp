@@ -19,7 +19,10 @@ FunctionManager::FunctionManager(Module* pMod, TypeManager *pTypeManager,
   m_pHaveAllocedMem(haveAllocedMem), m_pPtrToHeap(ptrToHeap)
 {
 	declareMmap();
-	declarePrintf();
+	//declarePrintf();
+
+	declareAddMemoryBlock();
+	defineAddMemoryBlock();
 
 	// Initialize Global variables (global strings for printf)
 	// Probably should put this in a function call
@@ -508,11 +511,8 @@ bool FunctionManager::isMmapCall(CallInst* callInst)
 		StringRef strMalloc("mmap");
 		if (funcName.equals(strMalloc))
 		{
-			errs() << "-------MMAP ATTRIBUTES-------\n";
-
 			AttributeList attrs = callInst->getAttributes();
-			errs()<<attrs.getNumAttrSets();
-			errs()<<"\n";
+
 			for (unsigned int i = attrs.index_begin(), e = attrs.index_end(); i != e; ++i)
 			{
 				errs()<<attrs.getAsString(i);
@@ -525,17 +525,6 @@ bool FunctionManager::isMmapCall(CallInst* callInst)
 				}*/
 			}
 
-			errs() << "-------THIS IS MMAP-------\n";
-			errs() << *callInst;
-			errs() << "\n";
-			errs() << *v;
-			errs() << "\n";
-			errs() << *sv;
-			errs() << "\n";
-			errs() << callInst->getCallingConv();
-			errs() <<"\n";
-			errs() << callInst->getTailCallKind();
-			errs() << "\n";
 			return true;
 		}
 
@@ -590,6 +579,17 @@ FunctionManager::MallocArgs FunctionManager::extractMallocArgs(CallInst *callIns
 		}
 	}
 	return args;
+}
+
+// This is just used for testing.
+CallInst* FunctionManager::insertAddMemoryBlockCall(/*InsertBefore*/Instruction *inst, Value *param)
+{
+	CallInst* addMemBlockCall = CallInst::Create(m_pFuncAddMemBlock, param, "", inst);
+	addMemBlockCall->setCallingConv(CallingConv::C);
+	addMemBlockCall->setTailCall(false);
+	AttributeList addMemBlockCall_PAL;
+	addMemBlockCall->setAttributes(addMemBlockCall_PAL);
+	return addMemBlockCall;
 }
 
 void FunctionManager::testFunction()
