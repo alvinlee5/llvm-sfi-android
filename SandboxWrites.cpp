@@ -52,34 +52,27 @@ bool SandboxWritesPass::runOnModule(Module &M)
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
 	{
 		Function *func = dyn_cast<Function>(F);
-		errs() << func;
-		errs() << "\n";
 		StringRef funcName1("llvm_add_memory_block");
 
-		errs() << func->getName();
-		errs() << "\n";
 		if ((func->getName()).equals(funcName1))
 		{
-			errs() <<"Skip\n";
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
 			// the function system calls will be looped through here (if used)
 			// it seems that LLVM doesn't have the BB's or instructions to loop
 			// through. This makes sense since we only compile our own source code,
 			// and not source code which implements system calls like printf.
-			continue;
+			//continue;
 		}
-		errs() << "Enter";
+		count++;
+		errs()<<count<<": "<<func->getName()<<"\n";
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
+			errs()<<"New BB \n";
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
-				if (count == 1)
-				{
-					errs() << *(dyn_cast<Instruction>(Inst));
-					errs() << "\n";
-				}
+				errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
 				//errs() << *(dyn_cast<Instruction>(Inst));
 				//errs() << "\n";
 /*
@@ -174,18 +167,12 @@ bool SandboxWritesPass::runOnModule(Module &M)
 								typeManager.GetFreeMemBlockPtTy(), "", addInst->getNextNode());
 
 						StoreInst *last = new StoreInst(intCast, secBlock,
-								typeManager.GetFreeMemBlockPtTy(),
 								false, intCast->getNextNode());
 
 						LoadInst *load = new LoadInst(secBlock, "", false, last->getNextNode());
 						funcManager.insertAddMemoryBlockCall(load->getNextNode(), load);
-
 					}
 				}
-			}
-			if (count == 0 || count == 1)
-			{
-				count++;
 			}
 		}
 	}

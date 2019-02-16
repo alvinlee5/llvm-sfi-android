@@ -21,7 +21,7 @@ void TypeManager::InitFreeMemBlockTy()
 				"llvm.struct.free.mem.block");
 	}
 	std::vector<Type*>FreeMemBlock_fields;
-	FreeMemBlock_fields.push_back(IntegerType::get(m_pMod->getContext(), 64));
+	FreeMemBlock_fields.push_back(IntegerType::get(m_pMod->getContext(), 32));
 
 	m_pFreeMemBlockPtTy = PointerType::get(m_pFreeMemBlockStructTy, 0);
 	FreeMemBlock_fields.push_back(m_pFreeMemBlockPtTy);

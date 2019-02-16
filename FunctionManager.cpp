@@ -241,29 +241,29 @@ void FunctionManager::defineAddMemoryBlock()
 
 	// Block  (label_22) - Initializes variables and checks first cond of if statement (!head)
 	AllocaInst* ptr_34 = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "", label_22);
-	ptr_34->setAlignment(8);
+	ptr_34->setAlignment(4);
 	AllocaInst* ptr_curr = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "curr", label_22);
-	ptr_curr->setAlignment(8);
+	ptr_curr->setAlignment(4);
 	StoreInst* void_35 = new StoreInst(ptr_b, ptr_34, false, label_22);
-	void_35->setAlignment(8);
+	void_35->setAlignment(4);
 	LoadInst* ptr_36 = new LoadInst(ptr_34, "", false, label_22);
-	ptr_36->setAlignment(8);
-	GetElementPtrInst* ptr_37 = GetElementPtrInst::Create(
+	ptr_36->setAlignment(4);
+	GetElementPtrInst* ptr_37 = GetElementPtrInst::CreateInBounds(
 			m_pTypeManager->GetFreeMemBlockStructTy(), ptr_36,
 			{int_val_0, int_val_2}, "", label_22);
 	StoreInst* void_38 = new StoreInst(m_pTypeManager->GetFreeMemBlockNull(),
 			ptr_37, false, label_22);
-	void_38->setAlignment(8);
+	void_38->setAlignment(4);
 	LoadInst* ptr_39 = new LoadInst(ptr_34, "", false, label_22);
-	ptr_39->setAlignment(8);
-	GetElementPtrInst* ptr_40 = GetElementPtrInst::Create(
+	ptr_39->setAlignment(4);
+	GetElementPtrInst* ptr_40 = GetElementPtrInst::CreateInBounds(
 			m_pTypeManager->GetFreeMemBlockStructTy(), ptr_39,
 			{int_val_0, int_val_1}, "", label_22);
 	StoreInst* void_41 = new StoreInst(m_pTypeManager->GetFreeMemBlockNull(),
 			ptr_40, false, label_22);
-	void_41->setAlignment(8);
+	void_41->setAlignment(4);
 	LoadInst* ptr_42 = new LoadInst(m_pFreeMemBlockHead, "", false, label_22);
-	ptr_42->setAlignment(8);
+	ptr_42->setAlignment(4);
 	ICmpInst* int1_43 = new ICmpInst(*label_22, ICmpInst::ICMP_NE, ptr_42,
 			m_pTypeManager->GetFreeMemBlockNull(), "");
 	BranchInst::Create(label_23, label_24, int1_43, label_22);
@@ -271,76 +271,76 @@ void FunctionManager::defineAddMemoryBlock()
 	// Block  (label_23) - check second condition of if statement
 	// if ((unsigned long)head > (unsigned long)b)
 	LoadInst* ptr_45 = new LoadInst(m_pFreeMemBlockHead, "", false, label_23);
-	ptr_45->setAlignment(8);
-	CastInst* int64_46 = new PtrToIntInst(ptr_45, IntegerType::get(m_pMod->getContext(), 64), "", label_23);
+	ptr_45->setAlignment(4);
+	CastInst* int64_46 = new PtrToIntInst(ptr_45, IntegerType::get(m_pMod->getContext(), 32), "", label_23);
 	LoadInst* ptr_47 = new LoadInst(ptr_34, "", false, label_23);
-	ptr_47->setAlignment(8);
-	CastInst* int64_48 = new PtrToIntInst(ptr_47, IntegerType::get(m_pMod->getContext(), 64), "", label_23);
+	ptr_47->setAlignment(4);
+	CastInst* int64_48 = new PtrToIntInst(ptr_47, IntegerType::get(m_pMod->getContext(), 32), "", label_23);
 	ICmpInst* int1_49 = new ICmpInst(*label_23, ICmpInst::ICMP_UGT, int64_46, int64_48, "");
 	BranchInst::Create(label_24, label_27, int1_49, label_23);
 
 	// Block  (label_24) - if (head) [inner if statement]
 	LoadInst* ptr_51 = new LoadInst(m_pFreeMemBlockHead, "", false, label_24);
-	ptr_51->setAlignment(8);
+	ptr_51->setAlignment(4);
 	ICmpInst* int1_52 = new ICmpInst(*label_24, ICmpInst::ICMP_NE, ptr_51, m_pTypeManager->GetFreeMemBlockNull(), "");
 	BranchInst::Create(label_25, label_26, int1_52, label_24);
 
 	// Block  (label_25) - head->prev = b;
 	LoadInst* ptr_54 = new LoadInst(ptr_34, "", false, label_25);
-	ptr_54->setAlignment(8);
+	ptr_54->setAlignment(4);
 	LoadInst* ptr_55 = new LoadInst(m_pFreeMemBlockHead, "", false, label_25);
-	ptr_55->setAlignment(8);
-	GetElementPtrInst* ptr_56 = GetElementPtrInst::Create(m_pTypeManager->GetFreeMemBlockStructTy(),
+	ptr_55->setAlignment(4);
+	GetElementPtrInst* ptr_56 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
 			ptr_55, {int_val_0, int_val_2}, "", label_25);
 	StoreInst* void_57 = new StoreInst(ptr_54, ptr_56, false, label_25);
-	void_57->setAlignment(8);
+	void_57->setAlignment(4);
 	BranchInst::Create(label_26, label_25);
 
 	// Block  (label_26) - b->next = head; head = b;
 	LoadInst* ptr_59 = new LoadInst(m_pFreeMemBlockHead, "", false, label_26);
-	ptr_59->setAlignment(8);
+	ptr_59->setAlignment(4);
 	LoadInst* ptr_60 = new LoadInst(ptr_34, "", false, label_26);
-	ptr_60->setAlignment(8);
-	GetElementPtrInst* ptr_61 = GetElementPtrInst::Create(m_pTypeManager->GetFreeMemBlockStructTy(),
+	ptr_60->setAlignment(4);
+	GetElementPtrInst* ptr_61 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
 			ptr_60, {int_val_0, int_val_1}, "", label_26);
 	StoreInst* void_62 = new StoreInst(ptr_59, ptr_61, false, label_26);
-	void_62->setAlignment(8);
+	void_62->setAlignment(4);
 	LoadInst* ptr_63 = new LoadInst(ptr_34, "", false, label_26);
-	ptr_63->setAlignment(8);
+	ptr_63->setAlignment(4);
 	StoreInst* void_64 = new StoreInst(ptr_63, m_pFreeMemBlockHead, false, label_26);
-	void_64->setAlignment(8);
+	void_64->setAlignment(4);
 	BranchInst::Create(label_33, label_26);
 
 	// Block  (label_27) - curr = head;
 	LoadInst* ptr_66 = new LoadInst(m_pFreeMemBlockHead, "", false, label_27);
-	ptr_66->setAlignment(8);
+	ptr_66->setAlignment(4);
 	StoreInst* void_67 = new StoreInst(ptr_66, ptr_curr, false, label_27);
-	void_67->setAlignment(8);
+	void_67->setAlignment(4);
 	BranchInst::Create(label_28, label_27);
 
 	// Block  (label_28) - if (curr->next)
 	LoadInst* ptr_69 = new LoadInst(ptr_curr, "", false, label_28);
-	ptr_69->setAlignment(8);
-	GetElementPtrInst* ptr_70 = GetElementPtrInst::Create(m_pTypeManager->GetFreeMemBlockStructTy(),
+	ptr_69->setAlignment(4);
+	GetElementPtrInst* ptr_70 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
 			ptr_69, {int_val_0, int_val_1}, "", label_28);
 	LoadInst* ptr_71 = new LoadInst(ptr_70, "", false, label_28);
-	ptr_71->setAlignment(8);
+	ptr_71->setAlignment(4);
 	ICmpInst* int1_72 = new ICmpInst(*label_28, ICmpInst::ICMP_NE, ptr_71,
 			m_pTypeManager->GetFreeMemBlockNull(), "");
 	BranchInst::Create(label_29, label_30, int1_72, label_28);
 
 	// Block  (label_29) - if ((unsigned long)curr->next < (unsigned long)b)
 	LoadInst* ptr_74 = new LoadInst(ptr_curr, "", false, label_29);
-	ptr_74->setAlignment(8);
-	GetElementPtrInst* ptr_75 = GetElementPtrInst::Create(m_pTypeManager->GetFreeMemBlockStructTy(),
+	ptr_74->setAlignment(4);
+	GetElementPtrInst* ptr_75 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
 			ptr_74, {int_val_0, int_val_1}, "", label_29);
 	LoadInst* ptr_76 = new LoadInst(ptr_75, "", false, label_29);
-	ptr_76->setAlignment(8);
-	CastInst* int64_77 = new PtrToIntInst(ptr_76, IntegerType::get(m_pMod->getContext(), 64),
+	ptr_76->setAlignment(4);
+	CastInst* int64_77 = new PtrToIntInst(ptr_76, IntegerType::get(m_pMod->getContext(), 32),
 			"", label_29);
 	LoadInst* ptr_78 = new LoadInst(ptr_34, "", false, label_29);
-	ptr_78->setAlignment(8);
-	CastInst* int64_79 = new PtrToIntInst(ptr_78, IntegerType::get(m_pMod->getContext(), 64),
+	ptr_78->setAlignment(4);
+	CastInst* int64_79 = new PtrToIntInst(ptr_78, IntegerType::get(m_pMod->getContext(), 32),
 			"", label_29);
 	ICmpInst* int1_80 = new ICmpInst(*label_29, ICmpInst::ICMP_ULT, int64_77, int64_79, "");
 	BranchInst::Create(label_30, label_29);
@@ -354,39 +354,39 @@ void FunctionManager::defineAddMemoryBlock()
 
 	// Block  (label_31) - curr = curr->next
 	LoadInst* ptr_84 = new LoadInst(ptr_curr, "", false, label_31);
-	ptr_84->setAlignment(8);
-	GetElementPtrInst* ptr_85 = GetElementPtrInst::Create(m_pTypeManager->GetFreeMemBlockStructTy(),
+	ptr_84->setAlignment(4);
+	GetElementPtrInst* ptr_85 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(),
 			ptr_84, {int_val_0, int_val_1}, "", label_31);
 	LoadInst* ptr_86 = new LoadInst(ptr_85, "", false, label_31);
-	ptr_86->setAlignment(8);
+	ptr_86->setAlignment(4);
 	StoreInst* void_87 = new StoreInst(ptr_86, ptr_curr, false, label_31);
-	void_87->setAlignment(8);
+	void_87->setAlignment(4);
 	BranchInst::Create(label_28, label_31);
 
 	// Block  (label_32) - b->next = curr->next; curr->next = b
 	LoadInst* ptr_89 = new LoadInst(ptr_curr, "", false, label_32);
-	ptr_89->setAlignment(8);
-	GetElementPtrInst* ptr_90 = GetElementPtrInst::Create(
+	ptr_89->setAlignment(4);
+	GetElementPtrInst* ptr_90 = GetElementPtrInst::CreateInBounds(
 			m_pTypeManager->GetFreeMemBlockStructTy(), ptr_89,
 			{int_val_0, int_val_1}, "", label_32);
 	LoadInst* ptr_91 = new LoadInst(ptr_90, "", false, label_32);
-	ptr_91->setAlignment(8);
+	ptr_91->setAlignment(4);
 	LoadInst* ptr_92 = new LoadInst(ptr_34, "", false, label_32);
-	ptr_92->setAlignment(8);
-	GetElementPtrInst* ptr_93 = GetElementPtrInst::Create(
+	ptr_92->setAlignment(4);
+	GetElementPtrInst* ptr_93 = GetElementPtrInst::CreateInBounds(
 			m_pTypeManager->GetFreeMemBlockStructTy(), ptr_92,
 			{int_val_0, int_val_1}, "", label_32);
 	StoreInst* void_94 = new StoreInst(ptr_91, ptr_93, false, label_32);
-	void_94->setAlignment(8);
+	void_94->setAlignment(4);
 	LoadInst* ptr_95 = new LoadInst(ptr_34, "", false, label_32);
-	ptr_95->setAlignment(8);
+	ptr_95->setAlignment(4);
 	LoadInst* ptr_96 = new LoadInst(ptr_curr, "", false, label_32);
-	ptr_96->setAlignment(8);
-	GetElementPtrInst* ptr_97 = GetElementPtrInst::Create(
+	ptr_96->setAlignment(4);
+	GetElementPtrInst* ptr_97 = GetElementPtrInst::CreateInBounds(
 			m_pTypeManager->GetFreeMemBlockStructTy(), ptr_96,
 			{int_val_0, int_val_1}, "", label_32);
 	StoreInst* void_98 = new StoreInst(ptr_95, ptr_97, false, label_32);
-	void_98->setAlignment(8);
+	void_98->setAlignment(4);
 	BranchInst::Create(label_33, label_32);
 
 	// Block  (label_33)
