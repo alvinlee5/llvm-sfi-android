@@ -53,8 +53,10 @@ bool SandboxWritesPass::runOnModule(Module &M)
 	{
 		Function *func = dyn_cast<Function>(F);
 		StringRef funcName1("llvm_add_memory_block");
+		StringRef funcName2("llvm_split_memory_block");
 
-		if ((func->getName()).equals(funcName1))
+		if ((func->getName()).equals(funcName1)||
+				(func->getName()).equals(funcName2))
 		{
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
