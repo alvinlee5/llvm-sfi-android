@@ -30,6 +30,9 @@ FunctionManager::FunctionManager(Module* pMod, TypeManager *pTypeManager,
 	declareRemoveMemBlock();
 	defineRemoveMemBlock();
 
+	declareMalloc();
+	defineMalloc();
+
 	// Initialize Global variables (global strings for printf)
 	// Probably should put this in a function call
 	ArrayType* ArrayTy_13Elements = ArrayType::get(IntegerType::get(m_pMod->getContext(), 8), 13);
@@ -674,6 +677,375 @@ void FunctionManager::defineRemoveMemBlock()
 	ReturnInst::Create(m_pMod->getContext(), label_54);
 }
 
+void FunctionManager::declareMalloc()
+{
+	PointerType* voidPtrType = PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
+	std::vector<Type*>malloc_Args;
+	malloc_Args.push_back(IntegerType::get(m_pMod->getContext(), 32));
+	FunctionType* mallocTy = FunctionType::get(
+			/*Result=*/voidPtrType,
+			/*Params=*/malloc_Args,
+			/*isVarArg=*/false);
+
+	m_pFuncMalloc = m_pMod->getFunction("llvm_malloc");
+	if (!m_pFuncMalloc)
+	{
+		m_pFuncMalloc = Function::Create(
+		/*Type=*/mallocTy,
+		/*Linkage=*/GlobalValue::ExternalLinkage,
+		/*Name=*/"llvm_malloc", m_pMod);
+		m_pFuncMalloc->setCallingConv(CallingConv::C);
+	}
+	AttributeList func__malloc_PAL;
+	{
+		SmallVector<AttributeList, 4> Attrs;
+		AttributeList PAS;
+		{
+			AttrBuilder B;
+			B.addAttribute(Attribute::NoUnwind);
+			B.addAttribute(Attribute::UWTable);
+			PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
+		}
+
+		Attrs.push_back(PAS);
+		func__malloc_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
+
+	}
+	m_pFuncMalloc->setAttributes(func__malloc_PAL);
+}
+
+void FunctionManager::defineMalloc()
+{
+	PointerType* voidPtrType = PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
+	ConstantInt* int_val_0 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("0"), 10));
+	ConstantInt* int_val_1 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("1"), 10));
+	ConstantInt* int_val_2 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("2"), 10));
+	ConstantInt* int_val_3 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("3"), 10)); // param for mmap
+	ConstantInt* int_val_34 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("34"), 10)); // param for mmap
+	ConstantInt* int_val_neg1 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("-1"), 10)); // param for mmap
+	ConstantInt* const_int64_0 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("0"), 10)); // param for mmap
+	// This is the size of block_t, need to be careful in case we change the structure and the
+	// size of the struct changes.
+	ConstantInt* int_val_12 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("12"), 10));
+	ConstantPointerNull* voidPtrNull = ConstantPointerNull::get(voidPtrType);
+	ConstantInt* allocMem_5Pages = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("20480"), 10)); // param for mmap
+	ConstantInt* allocMemSize_MinusStructSize = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("20468"), 10));
+
+	Function::arg_iterator args = m_pFuncMalloc->arg_begin();
+	Value* int64_size_192 = &(*args);
+	int64_size_192->setName("size");
+
+	BasicBlock* label_193 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_194 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_195 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_196 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_197 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_198 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_199 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_200 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_201 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_202 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_203 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_204 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_205 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_206 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_207 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_208 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_209 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_210 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+	BasicBlock* label_211 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncMalloc,0);
+
+	// Block  (label_193)
+	AllocaInst* ptr_212 = new AllocaInst(voidPtrType, 0, "", label_193);
+	ptr_212->setAlignment(4);
+	AllocaInst* ptr_213 = new AllocaInst(IntegerType::get(m_pMod->getContext(), 32), 0, "", label_193);
+	ptr_213->setAlignment(4);
+	AllocaInst* ptr_block_mem = new AllocaInst(voidPtrType, 0, "block_mem", label_193);
+	ptr_block_mem->setAlignment(4);
+	AllocaInst* ptr_ptr = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "ptr", label_193);
+	ptr_ptr->setAlignment(4);
+	AllocaInst* ptr_newptr_214 = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "newptr", label_193);
+	ptr_newptr_214->setAlignment(4);
+	StoreInst* void_215 = new StoreInst(int64_size_192, ptr_213, false, label_193);
+	void_215->setAlignment(4);
+	LoadInst* ptr_216 = new LoadInst(m_pFreeMemBlockHead, "", false, label_193);
+	ptr_216->setAlignment(4);
+	StoreInst* void_217 = new StoreInst(ptr_216, ptr_ptr, false, label_193);
+	void_217->setAlignment(4);
+	BranchInst::Create(label_194, label_193);
+
+	// Block  (label_194)
+	LoadInst* ptr_219 = new LoadInst(ptr_ptr, "", false, label_194);
+	ptr_219->setAlignment(4);
+	ICmpInst* int1_220 = new ICmpInst(*label_194, ICmpInst::ICMP_NE, ptr_219, m_pTypeManager->GetFreeMemBlockNull(), "");
+	BranchInst::Create(label_195, label_201, int1_220, label_194);
+
+	// Block  (label_195)
+	LoadInst* ptr_222 = new LoadInst(ptr_ptr, "", false, label_195);
+	ptr_222->setAlignment(4);
+	GetElementPtrInst* ptr_223 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_222, {
+	int_val_0,
+	int_val_0
+	}, "", label_195);
+	LoadInst* int64_224 = new LoadInst(ptr_223, "", false, label_195);
+	int64_224->setAlignment(4);
+	LoadInst* int64_225 = new LoadInst(ptr_213, "", false, label_195);
+	int64_225->setAlignment(4);
+	BinaryOperator* int64_226 = BinaryOperator::Create(Instruction::Add, int64_225, int_val_12, "", label_195);
+	ICmpInst* int1_227 = new ICmpInst(*label_195, ICmpInst::ICMP_UGE, int64_224, int64_226, "");
+	BranchInst::Create(label_196, label_199, int1_227, label_195);
+
+	// Block  (label_196)
+	LoadInst* ptr_229 = new LoadInst(ptr_ptr, "", false, label_196);
+	ptr_229->setAlignment(4);
+	CastInst* int64_230 = new PtrToIntInst(ptr_229, IntegerType::get(m_pMod->getContext(), 32), "", label_196);
+	BinaryOperator* int64_231 = BinaryOperator::Create(Instruction::Add, int64_230, int_val_12, "", label_196);
+	CastInst* ptr_232 = new IntToPtrInst(int64_231, voidPtrType, "", label_196);
+	StoreInst* void_233 = new StoreInst(ptr_232, ptr_block_mem, false, label_196);
+	void_233->setAlignment(4);
+	LoadInst* ptr_234 = new LoadInst(ptr_ptr, "", false, label_196);
+	ptr_234->setAlignment(4);
+	CallInst* void_235 = CallInst::Create(m_pFuncRemovemMemBlock, ptr_234, "", label_196);
+	void_235->setCallingConv(CallingConv::C);
+	void_235->setTailCall(false);
+	AttributeList void_235_PAL;
+	void_235->setAttributes(void_235_PAL);
+
+	LoadInst* ptr_236 = new LoadInst(ptr_ptr, "", false, label_196);
+	ptr_236->setAlignment(4);
+	GetElementPtrInst* ptr_237 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_236, {
+	int_val_0,
+	int_val_0
+	}, "", label_196);
+	LoadInst* int64_238 = new LoadInst(ptr_237, "", false, label_196);
+	int64_238->setAlignment(4);
+	LoadInst* int64_239 = new LoadInst(ptr_213, "", false, label_196);
+	int64_239->setAlignment(4);
+	ICmpInst* int1_240 = new ICmpInst(*label_196, ICmpInst::ICMP_EQ, int64_238, int64_239, "");
+	BranchInst::Create(label_197, label_198, int1_240, label_196);
+
+	// Block  (label_197)
+	LoadInst* ptr_242 = new LoadInst(ptr_block_mem, "", false, label_197);
+	ptr_242->setAlignment(4);
+	StoreInst* void_243 = new StoreInst(ptr_242, ptr_212, false, label_197);
+	void_243->setAlignment(4);
+	BranchInst::Create(label_211, label_197);
+
+	// Block  (label_198)
+	LoadInst* ptr_245 = new LoadInst(ptr_ptr, "", false, label_198);
+	ptr_245->setAlignment(4);
+	LoadInst* int64_246 = new LoadInst(ptr_213, "", false, label_198);
+	int64_246->setAlignment(4);
+	std::vector<Value*> ptr_247_params;
+	ptr_247_params.push_back(ptr_245);
+	ptr_247_params.push_back(int64_246);
+	CallInst* ptr_247 = CallInst::Create(m_pFuncSplitMemBlock, ptr_247_params, "", label_198);
+	ptr_247->setCallingConv(CallingConv::C);
+	ptr_247->setTailCall(false);
+	AttributeList ptr_247_PAL;
+	ptr_247->setAttributes(ptr_247_PAL);
+
+	StoreInst* void_248 = new StoreInst(ptr_247, ptr_newptr_214, false, label_198);
+	void_248->setAlignment(4);
+	LoadInst* ptr_249 = new LoadInst(ptr_newptr_214, "", false, label_198);
+	ptr_249->setAlignment(4);
+	CallInst* void_250 = CallInst::Create(m_pFuncAddMemBlock, ptr_249, "", label_198);
+	void_250->setCallingConv(CallingConv::C);
+	void_250->setTailCall(false);
+	AttributeList void_250_PAL;
+	void_250->setAttributes(void_250_PAL);
+
+	LoadInst* ptr_251 = new LoadInst(ptr_block_mem, "", false, label_198);
+	ptr_251->setAlignment(4);
+	StoreInst* void_252 = new StoreInst(ptr_251, ptr_212, false, label_198);
+	void_252->setAlignment(4);
+	BranchInst::Create(label_211, label_198);
+
+	// Block  (label_199)
+	LoadInst* ptr_254 = new LoadInst(ptr_ptr, "", false, label_199);
+	ptr_254->setAlignment(4);
+	GetElementPtrInst* ptr_255 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_254, {
+	int_val_0,
+	int_val_1
+	}, "", label_199);
+	LoadInst* ptr_256 = new LoadInst(ptr_255, "", false, label_199);
+	ptr_256->setAlignment(4);
+	StoreInst* void_257 = new StoreInst(ptr_256, ptr_ptr, false, label_199);
+	void_257->setAlignment(4);
+	BranchInst::Create(label_200, label_199);
+
+	// Block  (label_200)
+	BranchInst::Create(label_194, label_200);
+
+	// Block  (label_201)
+	LoadInst* int32_260 = new LoadInst(m_pHaveAllocedMem, "", false, label_201);
+	int32_260->setAlignment(4);
+	ICmpInst* int1_261 = new ICmpInst(*label_201, ICmpInst::ICMP_NE, int32_260, int_val_0, "");
+	BranchInst::Create(label_210, label_202, int1_261, label_201);
+
+	// Block  (label_202)
+	StoreInst* void_263 = new StoreInst(int_val_1, m_pHaveAllocedMem, false, label_202);
+	void_263->setAlignment(4);
+	std::vector<Value*> ptr_264_params;
+	ptr_264_params.push_back(voidPtrNull);
+	ptr_264_params.push_back(allocMem_5Pages);
+	ptr_264_params.push_back(int_val_3);
+	ptr_264_params.push_back(int_val_34);
+	ptr_264_params.push_back(int_val_neg1);
+	ptr_264_params.push_back(const_int64_0);
+	CallInst* ptr_264 = CallInst::Create(m_pFuncMmap, ptr_264_params, "", label_202);
+	ptr_264->setCallingConv(CallingConv::C);
+	ptr_264->setTailCall(false);
+	AttributeList ptr_264_PAL;
+	{
+	SmallVector<AttributeList, 4> Attrs;
+	AttributeList PAS;
+	{
+	 AttrBuilder B;
+	 B.addAttribute(Attribute::NoUnwind);
+	 PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
+	}
+
+	Attrs.push_back(PAS);
+	ptr_264_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
+
+	}
+	ptr_264->setAttributes(ptr_264_PAL);
+
+	CastInst* ptr_265 = new BitCastInst(ptr_264, m_pTypeManager->GetFreeMemBlockPtTy(), "", label_202);
+	StoreInst* void_266 = new StoreInst(ptr_265, ptr_ptr, false, label_202);
+	void_266->setAlignment(4);
+
+	// This "block" was added after the initial implementation
+	// Have gvar point to beginning of llvm_heap
+	LoadInst* ptrFromMmap = new LoadInst(ptr_ptr, "", false, label_202);
+	ptrFromMmap->setAlignment(4);
+	CastInst* castPtrToVoidType = new BitCastInst(ptrFromMmap, voidPtrType, "", label_202);
+	StoreInst* storeHeapAddrToGvar = new StoreInst(castPtrToVoidType, m_pPtrToHeap, false, label_202);
+	storeHeapAddrToGvar->setAlignment(4);
+
+	LoadInst* ptr_267 = new LoadInst(ptr_ptr, "", false, label_202);
+	ptr_267->setAlignment(4);
+	ICmpInst* int1_268 = new ICmpInst(*label_202, ICmpInst::ICMP_NE, ptr_267, m_pTypeManager->GetFreeMemBlockNull(), "");
+	BranchInst::Create(label_204, label_203, int1_268, label_202);
+
+	// Block  (label_203)
+	StoreInst* void_270 = new StoreInst(voidPtrNull, ptr_212, false, label_203);
+	void_270->setAlignment(4);
+	BranchInst::Create(label_211, label_203);
+
+	// Block  (label_204)
+	LoadInst* ptr_272 = new LoadInst(ptr_ptr, "", false, label_204);
+	ptr_272->setAlignment(4);
+	GetElementPtrInst* ptr_273 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_272, {
+	int_val_0,
+	int_val_1
+	}, "", label_204);
+	StoreInst* void_274 = new StoreInst(m_pTypeManager->GetFreeMemBlockNull(), ptr_273, false, label_204);
+	void_274->setAlignment(4);
+	LoadInst* ptr_275 = new LoadInst(ptr_ptr, "", false, label_204);
+	ptr_275->setAlignment(4);
+	GetElementPtrInst* ptr_276 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_275, {
+	int_val_0,
+	int_val_2
+	}, "", label_204);
+	StoreInst* void_277 = new StoreInst(m_pTypeManager->GetFreeMemBlockNull(), ptr_276, false, label_204);
+	void_277->setAlignment(4);
+	LoadInst* ptr_278 = new LoadInst(ptr_ptr, "", false, label_204);
+	ptr_278->setAlignment(4);
+	GetElementPtrInst* ptr_279 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_278, {
+	int_val_0,
+	int_val_0
+	}, "", label_204);
+	StoreInst* void_280 = new StoreInst(allocMemSize_MinusStructSize, ptr_279, false, label_204);
+	void_280->setAlignment(4);
+	LoadInst* ptr_281 = new LoadInst(ptr_ptr, "", false, label_204);
+	ptr_281->setAlignment(4);
+	GetElementPtrInst* ptr_282 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_281, {
+	int_val_0,
+	int_val_0
+	}, "", label_204);
+	LoadInst* int64_283 = new LoadInst(ptr_282, "", false, label_204);
+	int64_283->setAlignment(4);
+	LoadInst* int64_284 = new LoadInst(ptr_213, "", false, label_204);
+	int64_284->setAlignment(4);
+	ICmpInst* int1_285 = new ICmpInst(*label_204, ICmpInst::ICMP_UGT, int64_283, int64_284, "");
+	BranchInst::Create(label_205, label_206, int1_285, label_204);
+
+	// Block  (label_205)
+	LoadInst* ptr_287 = new LoadInst(ptr_ptr, "", false, label_205);
+	ptr_287->setAlignment(4);
+	LoadInst* int64_288 = new LoadInst(ptr_213, "", false, label_205);
+	int64_288->setAlignment(4);
+	std::vector<Value*> ptr_289_params;
+	ptr_289_params.push_back(ptr_287);
+	ptr_289_params.push_back(int64_288);
+	CallInst* ptr_289 = CallInst::Create(m_pFuncSplitMemBlock, ptr_289_params, "", label_205);
+	ptr_289->setCallingConv(CallingConv::C);
+	ptr_289->setTailCall(false);
+	AttributeList ptr_289_PAL;
+	ptr_289->setAttributes(ptr_289_PAL);
+
+	StoreInst* void_290 = new StoreInst(ptr_289, ptr_newptr_214, false, label_205);
+	void_290->setAlignment(4);
+	LoadInst* ptr_291 = new LoadInst(ptr_newptr_214, "", false, label_205);
+	ptr_291->setAlignment(4);
+	CallInst* void_292 = CallInst::Create(m_pFuncAddMemBlock, ptr_291, "", label_205);
+	void_292->setCallingConv(CallingConv::C);
+	void_292->setTailCall(false);
+	AttributeList void_292_PAL;
+	void_292->setAttributes(void_292_PAL);
+
+	LoadInst* ptr_293 = new LoadInst(ptr_ptr, "", false, label_205);
+	ptr_293->setAlignment(4);
+	CastInst* int64_294 = new PtrToIntInst(ptr_293, IntegerType::get(m_pMod->getContext(), 32), "", label_205);
+	BinaryOperator* int64_295 = BinaryOperator::Create(Instruction::Add, int64_294, int_val_12, "", label_205);
+	CastInst* ptr_296 = new IntToPtrInst(int64_295, voidPtrType, "", label_205);
+	StoreInst* void_297 = new StoreInst(ptr_296, ptr_212, false, label_205);
+	void_297->setAlignment(4);
+	BranchInst::Create(label_211, label_205);
+
+	// Block  (label_206)
+	LoadInst* ptr_299 = new LoadInst(ptr_ptr, "", false, label_206);
+	ptr_299->setAlignment(4);
+	GetElementPtrInst* ptr_300 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_299, {
+	int_val_0,
+	int_val_0
+	}, "", label_206);
+	LoadInst* int64_301 = new LoadInst(ptr_300, "", false, label_206);
+	int64_301->setAlignment(4);
+	LoadInst* int64_302 = new LoadInst(ptr_213, "", false, label_206);
+	int64_302->setAlignment(4);
+	ICmpInst* int1_303 = new ICmpInst(*label_206, ICmpInst::ICMP_EQ, int64_301, int64_302, "");
+	BranchInst::Create(label_207, label_208, int1_303, label_206);
+
+	// Block  (label_207)
+	LoadInst* ptr_305 = new LoadInst(ptr_ptr, "", false, label_207);
+	ptr_305->setAlignment(4);
+	CastInst* int64_306 = new PtrToIntInst(ptr_305, IntegerType::get(m_pMod->getContext(), 32), "", label_207);
+	BinaryOperator* int64_307 = BinaryOperator::Create(Instruction::Add, int64_306, int_val_12, "", label_207);
+	CastInst* ptr_308 = new IntToPtrInst(int64_307, voidPtrType, "", label_207);
+	StoreInst* void_309 = new StoreInst(ptr_308, ptr_212, false, label_207);
+	void_309->setAlignment(4);
+	BranchInst::Create(label_211, label_207);
+
+	// Block  (label_208)
+	BranchInst::Create(label_209, label_208);
+
+	// Block  (label_209)
+	BranchInst::Create(label_210, label_209);
+
+	// Block  (label_210)
+	StoreInst* void_313 = new StoreInst(voidPtrNull, ptr_212, false, label_210);
+	void_313->setAlignment(4);
+	BranchInst::Create(label_211, label_210);
+
+	// Block  (label_211)
+	LoadInst* ptr_315 = new LoadInst(ptr_212, "", false, label_211);
+	ptr_315->setAlignment(4);
+	ReturnInst::Create(m_pMod->getContext(), ptr_315, label_211);
+}
+
 /*** Function summary - FunctionManager::replaceMallocWithMmap ***
 Takes in an instruction, and replaces it with a call to
 before the given instruction.
@@ -706,11 +1078,11 @@ Instruction* FunctionManager::replaceMallocWithMmap(Instruction *inst/*, MallocA
 	ConstantInt* mmap_offset_arg = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("0"), 10));
 
 	AllocaInst* pMmapAddr = new AllocaInst(voidPtrType, 0, "pMmapAddr", inst);
-	pMmapAddr->setAlignment(8);
+	pMmapAddr->setAlignment(4);
 	StoreInst* void_17 = new StoreInst(ptrToMmapAddr, pMmapAddr, false, inst);
-	void_17->setAlignment(8);
+	void_17->setAlignment(4);
 	LoadInst* mmapAddr = new LoadInst(pMmapAddr, "", false, inst);
-	mmapAddr->setAlignment(8);
+	mmapAddr->setAlignment(4);
 	std::vector<Value*> mmapFuncParams;
 	mmapFuncParams.push_back(/*ptrToMmapAddr*/mmapAddr);
 	mmapFuncParams.push_back(bytesToAlloc);

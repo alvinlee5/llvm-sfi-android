@@ -60,6 +60,7 @@ class FunctionManager
 		Function *m_pFuncAddMemBlock;
 		Function *m_pFuncSplitMemBlock;
 		Function *m_pFuncRemovemMemBlock;
+		Function *m_pFuncMalloc;
 
 		// Globals we need access to (makes sense to put them here?)
 	    GlobalVariable *m_pFreeMemBlockHead;
@@ -84,6 +85,9 @@ class FunctionManager
 
 		void declareRemoveMemBlock();
 		void defineRemoveMemBlock();
+
+		void declareMalloc();
+		void defineMalloc();
 };
 
 
