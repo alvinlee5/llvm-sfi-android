@@ -1053,6 +1053,294 @@ void FunctionManager::defineMalloc()
 	ReturnInst::Create(m_pMod->getContext(), ptr_315, label_211);
 }
 
+void FunctionManager::declareScanMerge()
+{
+	std::vector<Type*>scanMerge_params;
+	FunctionType* scanMergeTy = FunctionType::get(
+	/*Result=*/Type::getVoidTy(m_pMod->getContext()),
+	/*Params=*/scanMerge_params,
+	/*isVarArg=*/false);
+
+	m_pFuncScanMerge = m_pMod->getFunction("llvm_scan_merge");
+	if (!m_pFuncScanMerge)
+	{
+		m_pFuncScanMerge = Function::Create(
+		/*Type=*/scanMergeTy,
+		/*Linkage=*/GlobalValue::ExternalLinkage,
+		/*Name=*/"llvm_scan_merge", m_pMod);
+		m_pFuncScanMerge->setCallingConv(CallingConv::C);
+	}
+	AttributeList func_scan_merge_PAL;
+	{
+		SmallVector<AttributeList, 4> Attrs;
+		AttributeList PAS;
+		{
+			AttrBuilder B;
+			B.addAttribute(Attribute::NoUnwind);
+			B.addAttribute(Attribute::UWTable);
+			PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
+		}
+
+		Attrs.push_back(PAS);
+		func_scan_merge_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
+
+	}
+	m_pFuncScanMerge->setAttributes(func_scan_merge_PAL);
+}
+
+void FunctionManager::defineScanMerge()
+{
+	ConstantInt* int_val_0 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("0"), 10));
+	ConstantInt* int_val_1 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("1"), 10));
+	ConstantInt* int_val_2 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("2"), 10));
+	// This is the size of block_t, need to be careful in case we change the structure and the
+	// size of the struct changes.
+	ConstantInt* int_val_12 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("12"), 10));
+
+	BasicBlock* label_99 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_100 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_101 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_102 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_103 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_104 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_105 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_106 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+	BasicBlock* label_107 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncScanMerge,0);
+
+	// Block  (label_99)
+	AllocaInst* ptr_curr_108 = new AllocaInst(m_pTypeManager->GetFreeMemBlockPtTy(), 0, "curr", label_99);
+	ptr_curr_108->setAlignment(4);
+	AllocaInst* ptr_header_curr = new AllocaInst(IntegerType::get(m_pMod->getContext(), 32), 0, "header_curr", label_99);
+	ptr_header_curr->setAlignment(4);
+	AllocaInst* ptr_header_next = new AllocaInst(IntegerType::get(m_pMod->getContext(), 32), 0, "header_next", label_99);
+	ptr_header_next->setAlignment(4);
+	LoadInst* ptr_109 = new LoadInst(m_pFreeMemBlockHead, "", false, label_99);
+	ptr_109->setAlignment(4);
+	StoreInst* void_110 = new StoreInst(ptr_109, ptr_curr_108, false, label_99);
+	void_110->setAlignment(4);
+	BranchInst::Create(label_100, label_99);
+
+	// Block  (label_100)
+	LoadInst* ptr_112 = new LoadInst(ptr_curr_108, "", false, label_100);
+	ptr_112->setAlignment(4);
+	GetElementPtrInst* ptr_113 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_112, {
+			int_val_0,
+			int_val_1
+	}, "", label_100);
+	LoadInst* ptr_114 = new LoadInst(ptr_113, "", false, label_100);
+	ptr_114->setAlignment(4);
+	ICmpInst* int1_115 = new ICmpInst(*label_100, ICmpInst::ICMP_NE, ptr_114, m_pTypeManager->GetFreeMemBlockNull(), "");
+	BranchInst::Create(label_101, label_107, int1_115, label_100);
+
+	// Block  (label_101)
+	LoadInst* ptr_117 = new LoadInst(ptr_curr_108, "", false, label_101);
+	ptr_117->setAlignment(4);
+	CastInst* int64_118 = new PtrToIntInst(ptr_117, IntegerType::get(m_pMod->getContext(), 32), "", label_101);
+	StoreInst* void_119 = new StoreInst(int64_118, ptr_header_curr, false, label_101);
+	void_119->setAlignment(4);
+	LoadInst* ptr_120 = new LoadInst(ptr_curr_108, "", false, label_101);
+	ptr_120->setAlignment(4);
+	GetElementPtrInst* ptr_121 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_120, {
+			int_val_0,
+			int_val_1
+	}, "", label_101);
+	LoadInst* ptr_122 = new LoadInst(ptr_121, "", false, label_101);
+	ptr_122->setAlignment(4);
+	CastInst* int64_123 = new PtrToIntInst(ptr_122, IntegerType::get(m_pMod->getContext(), 32), "", label_101);
+	StoreInst* void_124 = new StoreInst(int64_123, ptr_header_next, false, label_101);
+	void_124->setAlignment(4);
+	LoadInst* int64_125 = new LoadInst(ptr_header_curr, "", false, label_101);
+	int64_125->setAlignment(4);
+	LoadInst* ptr_126 = new LoadInst(ptr_curr_108, "", false, label_101);
+	ptr_126->setAlignment(4);
+	GetElementPtrInst* ptr_127 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_126, {
+			int_val_0,
+			int_val_0
+	}, "", label_101);
+	LoadInst* int64_128 = new LoadInst(ptr_127, "", false, label_101);
+	int64_128->setAlignment(4);
+	BinaryOperator* int64_129 = BinaryOperator::Create(Instruction::Add, int64_125, int64_128, "", label_101);
+	BinaryOperator* int64_130 = BinaryOperator::Create(Instruction::Add, int64_129, int_val_12, "", label_101);
+	LoadInst* int64_131 = new LoadInst(ptr_header_next, "", false, label_101);
+	int64_131->setAlignment(4);
+	ICmpInst* int1_132 = new ICmpInst(*label_101, ICmpInst::ICMP_EQ, int64_130, int64_131, "");
+	BranchInst::Create(label_102, label_106, int1_132, label_101);
+
+	// Block  (label_102)
+	LoadInst* ptr_134 = new LoadInst(ptr_curr_108, "", false, label_102);
+	ptr_134->setAlignment(4);
+	GetElementPtrInst* ptr_135 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_134, {
+			int_val_0,
+			int_val_1
+	}, "", label_102);
+	LoadInst* ptr_136 = new LoadInst(ptr_135, "", false, label_102);
+	ptr_136->setAlignment(4);
+	GetElementPtrInst* ptr_137 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_136, {
+			int_val_0,
+			int_val_0
+	}, "", label_102);
+	LoadInst* int64_138 = new LoadInst(ptr_137, "", false, label_102);
+	int64_138->setAlignment(4);
+	BinaryOperator* int64_139 = BinaryOperator::Create(Instruction::Add, int64_138, int_val_12, "", label_102);
+	LoadInst* ptr_140 = new LoadInst(ptr_curr_108, "", false, label_102);
+	ptr_140->setAlignment(4);
+	GetElementPtrInst* ptr_141 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_140, {
+			int_val_0,
+			int_val_0
+	}, "", label_102);
+	LoadInst* int64_142 = new LoadInst(ptr_141, "", false, label_102);
+	int64_142->setAlignment(4);
+	BinaryOperator* int64_143 = BinaryOperator::Create(Instruction::Add, int64_142, int64_139, "", label_102);
+	StoreInst* void_144 = new StoreInst(int64_143, ptr_141, false, label_102);
+	void_144->setAlignment(4);
+	LoadInst* ptr_145 = new LoadInst(ptr_curr_108, "", false, label_102);
+	ptr_145->setAlignment(4);
+	GetElementPtrInst* ptr_146 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_145, {
+			int_val_0,
+			int_val_1
+	}, "", label_102);
+	LoadInst* ptr_147 = new LoadInst(ptr_146, "", false, label_102);
+	ptr_147->setAlignment(4);
+	GetElementPtrInst* ptr_148 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_147, {
+			int_val_0,
+			int_val_1
+	}, "", label_102);
+	LoadInst* ptr_149 = new LoadInst(ptr_148, "", false, label_102);
+	ptr_149->setAlignment(4);
+	LoadInst* ptr_150 = new LoadInst(ptr_curr_108, "", false, label_102);
+	ptr_150->setAlignment(4);
+	GetElementPtrInst* ptr_151 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_150, {
+			int_val_0,
+			int_val_1
+	}, "", label_102);
+	StoreInst* void_152 = new StoreInst(ptr_149, ptr_151, false, label_102);
+	void_152->setAlignment(4);
+	LoadInst* ptr_153 = new LoadInst(ptr_curr_108, "", false, label_102);
+	ptr_153->setAlignment(4);
+	GetElementPtrInst* ptr_154 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_153, {
+			int_val_0,
+			int_val_1
+	}, "", label_102);
+	LoadInst* ptr_155 = new LoadInst(ptr_154, "", false, label_102);
+	ptr_155->setAlignment(4);
+	ICmpInst* int1_156 = new ICmpInst(*label_102, ICmpInst::ICMP_NE, ptr_155, m_pTypeManager->GetFreeMemBlockNull(), "");
+	BranchInst::Create(label_103, label_104, int1_156, label_102);
+
+	// Block  (label_103)
+	LoadInst* ptr_158 = new LoadInst(ptr_curr_108, "", false, label_103);
+	ptr_158->setAlignment(4);
+	LoadInst* ptr_159 = new LoadInst(ptr_curr_108, "", false, label_103);
+	ptr_159->setAlignment(4);
+	GetElementPtrInst* ptr_160 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_159, {
+			int_val_0,
+			int_val_1
+	}, "", label_103);
+	LoadInst* ptr_161 = new LoadInst(ptr_160, "", false, label_103);
+	ptr_161->setAlignment(4);
+	GetElementPtrInst* ptr_162 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_161, {
+			int_val_0,
+			int_val_2
+	}, "", label_103);
+	StoreInst* void_163 = new StoreInst(ptr_158, ptr_162, false, label_103);
+	void_163->setAlignment(4);
+	BranchInst::Create(label_105, label_103);
+
+	// Block  (label_104)
+	BranchInst::Create(label_107, label_104);
+
+	// Block  (label_105)
+	BranchInst::Create(label_106, label_105);
+
+	// Block  (label_106)
+	LoadInst* ptr_167 = new LoadInst(ptr_curr_108, "", false, label_106);
+	ptr_167->setAlignment(4);
+	GetElementPtrInst* ptr_168 = GetElementPtrInst::CreateInBounds(m_pTypeManager->GetFreeMemBlockStructTy(), ptr_167, {
+			int_val_0,
+			int_val_1
+	}, "", label_106);
+	LoadInst* ptr_169 = new LoadInst(ptr_168, "", false, label_106);
+	ptr_169->setAlignment(4);
+	StoreInst* void_170 = new StoreInst(ptr_169, ptr_curr_108, false, label_106);
+	void_170->setAlignment(4);
+	BranchInst::Create(label_100, label_106);
+
+	// Block  (label_107)
+	ReturnInst::Create(m_pMod->getContext(), label_107);
+}
+
+void FunctionManager::declareFree()
+{
+	PointerType* voidPtrType = PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
+	std::vector<Type*>free_args;
+	free_args.push_back(voidPtrType);
+	FunctionType* freeTy = FunctionType::get(
+	/*Result=*/Type::getVoidTy(m_pMod->getContext()),
+	/*Params=*/free_args,
+	/*isVarArg=*/false);
+
+	m_pFuncFree = m_pMod->getFunction("llvm_free");
+	if (!m_pFuncFree)
+	{
+		m_pFuncFree = Function::Create(
+		/*Type=*/freeTy,
+		/*Linkage=*/GlobalValue::ExternalLinkage,
+		/*Name=*/"llvm_free", m_pMod);
+		m_pFuncFree->setCallingConv(CallingConv::C);
+	}
+	AttributeList func__free_PAL;
+	{
+		SmallVector<AttributeList, 4> Attrs;
+		AttributeList PAS;
+		{
+			AttrBuilder B;
+			B.addAttribute(Attribute::NoUnwind);
+			B.addAttribute(Attribute::UWTable);
+			PAS = AttributeList::get(m_pMod->getContext(), ~0U, B);
+		}
+		Attrs.push_back(PAS);
+		func__free_PAL = AttributeList::get(m_pMod->getContext(), Attrs);
+	}
+	m_pFuncFree->setAttributes(func__free_PAL);
+}
+
+void FunctionManager::defineFree()
+{
+	PointerType* voidPtrType = PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
+	// This is the size of block_t, need to be careful in case we change the structure and the
+	// size of the struct changes.
+	ConstantInt* int_val_12 = ConstantInt::get(m_pMod->getContext(), APInt(32, StringRef("12"), 10));
+	Function::arg_iterator args = m_pFuncFree->arg_begin();
+	Value* ptr_ptr = &(*args);
+	ptr_ptr->setName("ptr");
+
+	BasicBlock* label_173 = BasicBlock::Create(m_pMod->getContext(), "",m_pFuncFree,0);
+
+	// Block  (label_173)
+	AllocaInst* ptr_174 = new AllocaInst(voidPtrType, 0, "", label_173);
+	ptr_174->setAlignment(4);
+	StoreInst* void_175 = new StoreInst(ptr_ptr, ptr_174, false, label_173);
+	void_175->setAlignment(4);
+	LoadInst* ptr_176 = new LoadInst(ptr_174, "", false, label_173);
+	ptr_176->setAlignment(4);
+	CastInst* int64_177 = new PtrToIntInst(ptr_176, IntegerType::get(m_pMod->getContext(), 32), "", label_173);
+	BinaryOperator* int64_178 = BinaryOperator::Create(Instruction::Sub, int64_177, int_val_12, "", label_173);
+	CastInst* ptr_179 = new IntToPtrInst(int64_178, voidPtrType, "", label_173);
+	CastInst* ptr_180 = new BitCastInst(ptr_179, m_pTypeManager->GetFreeMemBlockPtTy(), "", label_173);
+	CallInst* void_181 = CallInst::Create(m_pFuncAddMemBlock, ptr_180, "", label_173);
+	void_181->setCallingConv(CallingConv::C);
+	void_181->setTailCall(false);
+	AttributeList void_181_PAL;
+	void_181->setAttributes(void_181_PAL);
+
+	CallInst* void_182 = CallInst::Create(m_pFuncScanMerge, "", label_173);
+	void_182->setCallingConv(CallingConv::C);
+	void_182->setTailCall(false);
+	AttributeList void_182_PAL;
+	void_182->setAttributes(void_182_PAL);
+
+	ReturnInst::Create(m_pMod->getContext(), label_173);
+}
+
 /*** Function summary - FunctionManager::replaceMallocWithMmap ***
 Takes in an instruction, and replaces it with a call to
 before the given instruction.
