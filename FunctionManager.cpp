@@ -33,6 +33,12 @@ FunctionManager::FunctionManager(Module* pMod, TypeManager *pTypeManager,
 	declareMalloc();
 	defineMalloc();
 
+	declareScanMerge();
+	defineScanMerge();
+
+	declareFree();
+	defineFree();
+
 	// Initialize Global variables (global strings for printf)
 	// Probably should put this in a function call
 	ArrayType* ArrayTy_13Elements = ArrayType::get(IntegerType::get(m_pMod->getContext(), 8), 13);
