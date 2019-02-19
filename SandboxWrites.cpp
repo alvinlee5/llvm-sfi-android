@@ -68,19 +68,17 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			// it seems that LLVM doesn't have the BB's or instructions to loop
 			// through. This makes sense since we only compile our own source code,
 			// and not source code which implements system calls like printf.
-			//continue;
+			continue;
 		}
 		count++;
-		errs()<<count<<": "<<func->getName()<<"\n";
+		//errs()<<count<<": "<<func->getName()<<"\n";
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
-			errs()<<"New BB \n";
+			//errs()<<"New BB \n";
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
-				errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
-				//errs() << *(dyn_cast<Instruction>(Inst));
-				//errs() << "\n";
+				//errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
 /*
 				// every time we allocate memory we want to store
 				// the memory address of the allocated memory
@@ -122,26 +120,15 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
 					if (funcManager.isMallocCall(callInst))
 					{
-/*
-						FunctionManager::MallocArgs args = funcManager.extractMallocArgs(callInst);
-						Instruction* newInst = funcManager.replaceMallocWithMmap(callInst);
+
+						FunctionManager::MallocArgs args = funcManager.
+								extractMallocArgs(callInst);
+						Instruction* newInst = funcManager.replaceMallocWithMalloc(callInst, NULL);
 						CallInst* mmapCall = dyn_cast<CallInst>(newInst);
-						Value* v = mmapCall->getCalledValue();
-						Value* sv = v->stripPointerCasts();
-						errs() << "-------INSERTED MMAP CALL-------\n";
-						errs() << *mmapCall;
-						errs() << "\n";
-						errs() << *v;
-						errs() << "\n";
-						errs() << *sv;
-						errs() << "\n";
-						errs() << mmapCall->getCallingConv();
-						errs() << "\n";
-						errs() << mmapCall->getTailCallKind();
-						errs() << "\n";
+						errs() << "-------Replaced Malloc-------\n";
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
-*/
+
 
 					}
 
