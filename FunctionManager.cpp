@@ -1525,6 +1525,17 @@ Value* FunctionManager::extractMallocArgs(CallInst *callInst)
 	return args;
 }
 
+Value* FunctionManager::extractFreeArgs(CallInst *callInst)
+{
+	CallSite CS(callInst);
+	Value *args;
+	for (auto arg = CS.arg_begin(); arg != CS.arg_end(); arg++)
+	{
+		args = dyn_cast<Value>(arg);
+	}
+	return args;
+}
+
 // This is just used for testing.
 CallInst* FunctionManager::insertAddMemoryBlockCall(/*InsertBefore*/Instruction *inst, Value *param)
 {
