@@ -14,20 +14,6 @@ using namespace llvm;
 
 class FunctionManager
 {
-	// Private by default, might need to specify public
-	public:
-		struct MallocArgs
-		{
-			// Union because the argument is either constant or not
-			// If not, we will store the value in a newly alloc'd variable
-			union
-			{
-				ConstantInt* constArg;
-				Instruction* allocaInst; // will be an allocInst
-			};
-			bool isConstantArg;
-		};
-
 	public:
 		FunctionManager(Module *pMod, TypeManager *pTypeManager,
 				GlobalVariable *freeMemBlockHead, GlobalVariable *haveAllocedMem,
@@ -41,7 +27,7 @@ class FunctionManager
 		bool isMallocCall(CallInst *callInst);
 		bool isFreeCall(CallInst *callInst);
 		bool isMmapCall(CallInst *callInst);
-		MallocArgs extractMallocArgs(CallInst *callInst);
+		Value* extractMallocArgs(CallInst *callInst);
 
 		// custom malloc functions
 		CallInst* insertAddMemoryBlockCall(/*InsertBefore */Instruction *inst, Value *param); // for testing

@@ -71,14 +71,14 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			continue;
 		}
 		count++;
-		//errs()<<count<<": "<<func->getName()<<"\n";
+		errs()<<count<<": "<<func->getName()<<"\n";
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
-			//errs()<<"New BB \n";
+			errs()<<"New BB \n";
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
-				//errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
+				errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
 /*
 				// every time we allocate memory we want to store
 				// the memory address of the allocated memory
@@ -120,15 +120,15 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
 					if (funcManager.isMallocCall(callInst))
 					{
-
-						FunctionManager::MallocArgs args = funcManager.
+						/*
+						Value *args = funcManager.
 								extractMallocArgs(callInst);
 						Instruction* newInst = funcManager.replaceMallocWithMalloc(callInst, NULL);
 						CallInst* mmapCall = dyn_cast<CallInst>(newInst);
 						errs() << "-------Replaced Malloc-------\n";
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
-
+						*/
 
 					}
 

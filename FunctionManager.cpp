@@ -1514,31 +1514,13 @@ bool FunctionManager::isFreeCall(CallInst* callInst)
 	return false;
 }
 
-FunctionManager::MallocArgs FunctionManager::extractMallocArgs(CallInst *callInst)
+Value* FunctionManager::extractMallocArgs(CallInst *callInst)
 {
-	MallocArgs args;
+	Value *args;
 	CallSite CS(callInst);
 	for (auto arg = CS.arg_begin(); arg != CS.arg_end(); arg++)
 	{
-		// For constant args, cast to ConstantInt. Pass this
-		// value into call to mmap()
-		if (ConstantInt* CI = dyn_cast<ConstantInt>(arg))
-		{
-			args.isConstantArg = true;
-			args.constArg = CI;
-		}
-		// For non-const args, cast to Inst. Load the value from
-		// this inst (then store it), and pass the loaded value
-		// into call to mmap()
-		else if (Instruction* Inst = dyn_cast<Instruction>(arg))
-		{
-			Type* intType = IntegerType::get(m_pMod->getContext(), 64);
-			args.isConstantArg = false;
-			// Insert Variable to store the argument passed to malloc
-			// This is required for the new call to mmap (size to map)
-			args.allocaInst = new AllocaInst(intType, 0, "mallocSize", callInst);
-			new StoreInst(Inst, args.allocaInst, callInst);
-		}
+		args = dyn_cast<Value>(arg);
 	}
 	return args;
 }
