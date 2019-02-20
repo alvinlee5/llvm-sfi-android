@@ -1432,6 +1432,17 @@ CallInst* FunctionManager::replaceMallocWithMalloc(Instruction *inst, Value *siz
 	return mallocCallInst;
 }
 
+CallInst* FunctionManager::replaceFreeWithFree(Instruction *inst, Value *ptrToMemoryToFree)
+{
+	  CallInst* freeCallInst = CallInst::Create(m_pFuncFree, ptrToMemoryToFree, "");
+	  freeCallInst->setCallingConv(CallingConv::C);
+	  freeCallInst->setTailCall(false);
+	  AttributeList void_419_PAL;
+	  freeCallInst->setAttributes(void_419_PAL);
+	  ReplaceInstWithInst(inst, freeCallInst);
+	  return freeCallInst;
+}
+
 Function* FunctionManager::getMmapFunction()
 {
 	return m_pFuncMmap;
@@ -1505,6 +1516,19 @@ bool FunctionManager::isMmapCall(CallInst* callInst)
 bool FunctionManager::isFreeCall(CallInst* callInst)
 {
 	Function* funcCalled = callInst->getCalledFunction();
+	if (!funcCalled)
+	{
+		Value* v = callInst->getCalledValue();
+		Value* sv = v->stripPointerCasts();
+		StringRef funcName = sv->getName();
+		StringRef strFree("free");
+		if (funcName.equals(strFree))
+		{
+			return true;
+		}
+		return false;
+	}
+
 	StringRef funcName = funcCalled->getName();
 	StringRef strFree("free");
 	if (funcName.equals(strFree))

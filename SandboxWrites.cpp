@@ -56,11 +56,15 @@ bool SandboxWritesPass::runOnModule(Module &M)
 		StringRef funcName2("llvm_split_memory_block");
 		StringRef funcName3("llvm_remove_memory_block");
 		StringRef funcName4("llvm_malloc");
+		StringRef funcName5("llvm_scan_merge");
+		StringRef funcName6("llvm_free");
 
 		if ((func->getName()).equals(funcName1)||
 				(func->getName()).equals(funcName2)||
 				(func->getName()).equals(funcName3)||
-				(func->getName()).equals(funcName4))
+				(func->getName()).equals(funcName4) ||
+				(func->getName()).equals(funcName5) ||
+				(func->getName()).equals(funcName6))
 		{
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
@@ -71,14 +75,14 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			continue;
 		}
 		count++;
-		errs()<<count<<": "<<func->getName()<<"\n";
+		//errs()<<count<<": "<<func->getName()<<"\n";
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
-			errs()<<"New BB \n";
+			//errs()<<"New BB \n";
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
-				errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
+				//errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
 /*
 				// every time we allocate memory we want to store
 				// the memory address of the allocated memory
@@ -120,16 +124,21 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
 					if (funcManager.isMallocCall(callInst))
 					{
-						/*
+						errs() << "LLVM_Malloc\n";
 						Value *args = funcManager.
 								extractMallocArgs(callInst);
-						Instruction* newInst = funcManager.replaceMallocWithMalloc(callInst, NULL);
-						CallInst* mmapCall = dyn_cast<CallInst>(newInst);
-						errs() << "-------Replaced Malloc-------\n";
+						Instruction* newInst = funcManager.replaceMallocWithMalloc(callInst, args);
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
-						*/
 
+					}
+					if (funcManager.isFreeCall(callInst))
+					{
+						errs() << "LLVM_Free\n";
+						Value *args = funcManager.extractFreeArgs(callInst);
+						Instruction* newInst = funcManager.replaceFreeWithFree(callInst, args);
+						BasicBlock::iterator BI(newInst);
+						Inst = BI;
 					}
 
 					if (funcManager.isMmapCall(callInst))
