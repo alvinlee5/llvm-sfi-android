@@ -303,14 +303,14 @@ void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 
 	/* Size of sfi heap*/
 	m_pSizeOfHeap = new GlobalVariable(/*Module=*/*pMod,
-	/*Type=*/IntegerType::get(pMod->getContext(), 64),
+	/*Type=*/IntegerType::get(pMod->getContext(), 32),
 	/*isConstant=*/false,
 	/*Linkage=*/GlobalValue::ExternalLinkage,
 	/*Initializer=*/0, // has initializer, specified below
 	/*Name=*/"llvm_sizeOfHeap");
 	m_pSizeOfHeap->setAlignment(8);
 	ConstantInt* const_int64_22 = ConstantInt::get(pMod->getContext(),
-		 APInt(64, StringRef("20480"), 10));
+		 APInt(32, StringRef("20480"), 10));
 	m_pSizeOfHeap->setInitializer(const_int64_22);
 
 	/* Pointer to beginning of sfi heap */
