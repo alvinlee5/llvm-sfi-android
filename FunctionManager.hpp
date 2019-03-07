@@ -17,7 +17,8 @@ class FunctionManager
 	public:
 		FunctionManager(Module *pMod, TypeManager *pTypeManager,
 				GlobalVariable *freeMemBlockHead, GlobalVariable *haveAllocedMem,
-				GlobalVariable *ptrToHeap);
+				GlobalVariable *ptrToHeap,
+				GlobalVariable *ptrToHeapTop);
 
 		// mmap related functions
 		Instruction* replaceMallocWithMmap(Instruction *inst);
@@ -57,6 +58,7 @@ class FunctionManager
 	    GlobalVariable *m_pFreeMemBlockHead;
 	    GlobalVariable *m_pHaveAllocedMem;
 	    GlobalVariable *m_pPtrToHeap;
+	    GlobalVariable *m_pPtrToHeapTop;
 
 	    // Only needed in FunctionManager, so not defined in
 	    // SandboxWrites

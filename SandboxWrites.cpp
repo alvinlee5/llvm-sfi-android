@@ -54,7 +54,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 	TypeManager typeManager (&M);
 	InsertGlobalVars(&M, &typeManager);
 	FunctionManager funcManager(&M, &typeManager, m_pFreeMemBlockHead, m_pHaveAllocedMem,
-			m_pPtrToHeap);
+			m_pPtrToHeap, m_pPtrToHeapTop);
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
 	{
 		Function *func = dyn_cast<Function>(F);

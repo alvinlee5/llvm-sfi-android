@@ -14,9 +14,10 @@ using namespace llvm;
 
 FunctionManager::FunctionManager(Module* pMod, TypeManager *pTypeManager,
 		GlobalVariable *freeMemBlockHead, GlobalVariable *haveAllocedMem,
-		GlobalVariable *ptrToHeap)
+		GlobalVariable *ptrToHeap, GlobalVariable *ptrToHeapTop)
 : m_pMod(pMod), m_pTypeManager(pTypeManager), m_pFreeMemBlockHead(freeMemBlockHead),
-  m_pHaveAllocedMem(haveAllocedMem), m_pPtrToHeap(ptrToHeap)
+  m_pHaveAllocedMem(haveAllocedMem), m_pPtrToHeap(ptrToHeap),
+  m_pPtrToHeapTop(ptrToHeapTop)
 {
 	declareMmap();
 	//declarePrintf();
