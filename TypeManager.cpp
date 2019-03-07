@@ -32,6 +32,9 @@ void TypeManager::InitFreeMemBlockTy()
 		m_pFreeMemBlockStructTy->setBody(FreeMemBlock_fields, /*isPacked=*/false);
 	}
 	m_pFreeMemBlockNull = ConstantPointerNull::get(m_pFreeMemBlockPtTy);
+
+	m_pVoidPtrType = PointerType::get(IntegerType::get(m_pMod->getContext(), 8), 0);
+	m_pNullForVoidPtr = ConstantPointerNull::get(m_pVoidPtrType);
 }
 
 PointerType* TypeManager::GetFreeMemBlockPtTy()
@@ -47,5 +50,15 @@ StructType* TypeManager::GetFreeMemBlockStructTy()
 ConstantPointerNull* TypeManager::GetFreeMemBlockNull()
 {
 	return m_pFreeMemBlockNull;
+}
+
+PointerType* TypeManager::GetVoidPtrType()
+{
+	return m_pVoidPtrType;
+}
+
+ConstantPointerNull* TypeManager::GetVoidPtrNull()
+{
+	return m_pNullForVoidPtr;
 }
 

@@ -21,11 +21,16 @@ class TypeManager
 		StructType* GetFreeMemBlockStructTy();
 		ConstantPointerNull* GetFreeMemBlockNull();
 
+		PointerType* GetVoidPtrType();
+		ConstantPointerNull* GetVoidPtrNull();
+
 	private:
 		Module *m_pMod;
 		PointerType *m_pFreeMemBlockPtTy;
 		StructType *m_pFreeMemBlockStructTy;
 		ConstantPointerNull *m_pFreeMemBlockNull;
+		PointerType *m_pVoidPtrType;
+		ConstantPointerNull *m_pNullForVoidPtr;
 };
 
 #endif /* LIB_TRANSFORMS_SANDBOXWRITES_TYPEMANAGER_HPP_ */
