@@ -941,7 +941,7 @@ void FunctionManager::defineMalloc()
 	// Added after the "added after the initial implementation"
 	// Have gvar point to end of llvm_heap
 	LoadInst *loadHeap = new LoadInst(m_pPtrToHeap, "", false, label_202);
-	loadHeap->setAlignment(8);
+	loadHeap->setAlignment(4);
 	CastInst * ptrToHeapToInt = new PtrToIntInst(loadHeap,
 			IntegerType::get(m_pMod->getContext(), 32), "", label_202);
 
@@ -950,7 +950,7 @@ void FunctionManager::defineMalloc()
 	CastInst* upBound = new IntToPtrInst(addInst,
 			voidPtrType, "", label_202);
 	StoreInst* storeHeapTop = new StoreInst(upBound, m_pPtrToHeapTop, false, label_202);
-	storeHeapTop->setAlignment(8);
+	storeHeapTop->setAlignment(4);
 
 	LoadInst* ptr_267 = new LoadInst(ptr_ptr, "", false, label_202);
 	ptr_267->setAlignment(4);

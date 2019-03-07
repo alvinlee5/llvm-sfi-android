@@ -36,6 +36,7 @@ namespace {
     void SandBoxWrites(Module *pMod, StoreInst* inst, Function::iterator *BB,
     		Value* upperBound, Value* lowerBound);
     void InsertGlobalVars(Module *pMod, TypeManager* typeManager);
+    Instruction* UpdateStackPointers(AllocaInst* allocaInst, TypeManager *pTm/*, FunctionManager* pFm*/);
 
     // Make inserted globals members for now for easy access
     GlobalVariable *m_pFreeMemBlockHead;
@@ -102,7 +103,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					// 2. Assign a value to the memory
 					// 3. Print from the actual source file
 					LoadInst* ptr_23 = new LoadInst(ptr_test, "", false, inst);
-					ptr_23->setAlignment(8);
+					ptr_23->setAlignment(4);
 					ConstantInt* const_int32_99 = ConstantInt::get(M.getContext(),
 							APInt(64, StringRef("999"), 10));
 					StoreInst* void_24 = new StoreInst(const_int32_99, ptr_23, false, inst);
@@ -186,6 +187,50 @@ bool SandboxWritesPass::runOnModule(Module &M)
 		}
 	}
 	return true;
+}
+
+Instruction* SandboxWritesPass::UpdateStackPointers(AllocaInst* allocaInst, TypeManager *pTm/*, FunctionManager* pFm*/)
+{
+	Instruction *nextInst = allocaInst->getNextNode();
+	LoadInst *loadStackBot = new LoadInst(m_pStackBot, "", false, nextInst);
+	loadStackBot->setAlignment(4);
+	ICmpInst *cmpInst = new ICmpInst(nextInst,
+			CmpInst::Predicate::ICMP_EQ, loadStackBot,
+			pTm->GetVoidPtrNull(), "");
+
+	TerminatorInst *ifTerm = SplitBlockAndInsertIfThen(cmpInst,
+			nextInst, false);
+
+	// *** Instructions inside the If statement ***
+	CastInst *castToVoidPtr = new BitCastInst(allocaInst,
+			pTm->GetVoidPtrType(),
+			"", ifTerm);
+	StoreInst *storeStackAddr = new StoreInst(castToVoidPtr, m_pStackBot,
+			false, ifTerm);
+	storeStackAddr->setAlignment(4);
+
+/*	// *** Used for testing ***
+	LoadInst *load = new LoadInst(m_pStackBot, "", false, ifTerm);
+	pFm->insertPrintfCall(load, true, ifTerm);*/
+
+	// *** Instructions inside the If statement END ***
+
+	CastInst *castToVoidPtr2 = new BitCastInst(allocaInst,
+			pTm->GetVoidPtrType(),
+			"", nextInst);
+	StoreInst *storeStackAddr2 = new StoreInst(castToVoidPtr2, m_pStackTop,
+			false, nextInst);
+	storeStackAddr2->setAlignment(4);
+
+/*	// ***Used for testing***
+	LoadInst *load2 = new LoadInst(m_pStackTop, "", false, nextInst);
+	pFm->insertPrintfCall(load2, true, nextInst);*/
+
+	// Return the last inserted StoreInst
+	// This instruction will be used to update the
+	// basic block and instruction iterators so we
+	// don't instrument our own inserted code.
+	return storeStackAddr2;
 }
 
 /*** Function summary - SandboxWritesPass::SandBoxWrites ***
@@ -286,7 +331,7 @@ void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 			 /*Linkage=*/GlobalValue::ExternalLinkage,
 			 /*Initializer=*/0, // has initializer, specified below
 			 /*Name=*/"llvm_head");
-	m_pFreeMemBlockHead->setAlignment(8);
+	m_pFreeMemBlockHead->setAlignment(4);
 	m_pFreeMemBlockHead->setInitializer(typeManager->GetFreeMemBlockNull());
 
 	/*Boolean to keep track if mem has been alloced*/
@@ -308,7 +353,7 @@ void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 	/*Linkage=*/GlobalValue::ExternalLinkage,
 	/*Initializer=*/0, // has initializer, specified below
 	/*Name=*/"llvm_sizeOfHeap");
-	m_pSizeOfHeap->setAlignment(8);
+	m_pSizeOfHeap->setAlignment(4);
 	ConstantInt* const_int64_22 = ConstantInt::get(pMod->getContext(),
 		 APInt(32, StringRef("20480"), 10));
 	m_pSizeOfHeap->setInitializer(const_int64_22);
@@ -321,7 +366,7 @@ void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 	/*Linkage=*/GlobalValue::ExternalLinkage,
 	/*Initializer=*/0, // has initializer, specified below
 	/*Name=*/"llvm_ptrToHeap");
-	m_pPtrToHeap->setAlignment(8);
+	m_pPtrToHeap->setAlignment(4);
 	ConstantPointerNull* nullForVoidPtr = ConstantPointerNull::get(voidPtrType);
 	m_pPtrToHeap->setInitializer(nullForVoidPtr);
 
@@ -331,7 +376,7 @@ void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 	/*Linkage=*/GlobalValue::ExternalLinkage,
 	/*Initializer=*/0, // has initializer, specified below
 	/*Name=*/"llvm_ptrToHeapTop");
-	m_pPtrToHeapTop->setAlignment(8);
+	m_pPtrToHeapTop->setAlignment(4);
 	m_pPtrToHeapTop->setInitializer(nullForVoidPtr);
 
 	m_pStackTop = new GlobalVariable(/*Module=*/*pMod,
@@ -340,7 +385,7 @@ void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 	/*Linkage=*/GlobalValue::ExternalLinkage,
 	/*Initializer=*/0, // has initializer, specified below
 	/*Name=*/"llvm_ptrToStackTop");
-	m_pStackTop->setAlignment(8);
+	m_pStackTop->setAlignment(4);
 	m_pStackTop->setInitializer(nullForVoidPtr);
 
 	m_pStackBot = new GlobalVariable(/*Module=*/*pMod,
@@ -349,7 +394,7 @@ void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 	/*Linkage=*/GlobalValue::ExternalLinkage,
 	/*Initializer=*/0, // has initializer, specified below
 	/*Name=*/"llvm_ptrToStackBot");
-	m_pStackBot->setAlignment(8);
+	m_pStackBot->setAlignment(4);
 	m_pStackBot->setInitializer(nullForVoidPtr);
 
 }
