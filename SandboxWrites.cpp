@@ -93,43 +93,40 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
-				//errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
-/*
+
+
 				// every time we allocate memory we want to store
 				// the memory address of the allocated memory
 				if (isa<AllocaInst>(Inst))
 				{
-					//AllocaInst* inst = dyn_cast<AllocaInst>(Inst);
+					AllocaInst *allocaInst = dyn_cast<AllocaInst>(Inst);
+					Instruction* finalInst = UpdateStackPointers(allocaInst, &typeManager);
 
-
-					// Test for mmap:
-					// 1. Have pointer variable point to new mmaped memory
-					// 2. Assign a value to the memory
-					// 3. Print from the actual source file
-					LoadInst* ptr_23 = new LoadInst(ptr_test, "", false, inst);
-					ptr_23->setAlignment(4);
-					ConstantInt* const_int32_99 = ConstantInt::get(M.getContext(),
-							APInt(64, StringRef("999"), 10));
-					StoreInst* void_24 = new StoreInst(const_int32_99, ptr_23, false, inst);
-					void_24->setAlignment(4);
-
-					Inst++;
-		    		StoreInst *store_inst = new StoreInst(ptr_23, inst,
-		    				dyn_cast<Instruction>(Inst));
-		    		Inst--;
+					// We absolutely don't want to instrument on the code
+					// we've inserted ourselves, so skip all basic blocks
+					// and instructions we've just inserted
+					BB = finalInst->getParent()->getIterator();
+					Inst = finalInst->getIterator();
+					BBE = BB->end();
+					continue;
 
 				}
 
 				if (isa<StoreInst>(Inst))
 				{
-					StoreInst* inst = dyn_cast<StoreInst>(Inst);
-					//SandBoxWrites(&M, inst, &BB, NULL, NULL);
+					StoreInst *inst = dyn_cast<StoreInst>(Inst);
+					LoadInst *heapLower;
+					LoadInst *heapUpper;
+					LoadInst *stackBot;
+					LoadInst *stackTop;
+					GetSFIRegion(&heapLower, &heapUpper, &stackBot, &stackTop, inst);
+					SandBoxWritesV3(&M, inst, &BB, heapLower, heapUpper, stackTop, stackBot);
 
 					// Break since current iterator is invalidated after
 					// we split a basic block.
-					//break;
+					break;
 				}
-*/
+
 				if (isa<CallInst>(Inst))
 				{
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
@@ -150,41 +147,6 @@ bool SandboxWritesPass::runOnModule(Module &M)
 						Instruction* newInst = funcManager.replaceFreeWithFree(callInst, args);
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
-					}
-
-					if (funcManager.isMmapCall(callInst))
-					{
-/*
-						// Test for inserted AddMemoryBlock()
-						AllocaInst* secBlock = new AllocaInst(typeManager.GetFreeMemBlockPtTy(),
-								0, "secBlock", callInst->getNextNode());
-
-						CastInst *bitCast = new BitCastInst(callInst,
-								typeManager.GetFreeMemBlockPtTy(), "", secBlock->getNextNode());
-
-						StoreInst *storeMmapInGvar = new StoreInst(bitCast,
-								m_pFreeMemBlockHead, false, bitCast->getNextNode());
-
-						CastInst* ptrCast = new PtrToIntInst(callInst,
-								IntegerType::get(M.getContext(), 32), "",
-								storeMmapInGvar->getNextNode());
-
-						ConstantInt* int8192 = ConstantInt::get(M.getContext(),
-								APInt(32, StringRef("8192"), 10));
-
-						BinaryOperator* addInst = BinaryOperator::Create(Instruction::Add,
-							  ptrCast, int8192, "", ptrCast->getNextNode());
-
-
-						CastInst* intCast = new IntToPtrInst(addInst,
-								typeManager.GetFreeMemBlockPtTy(), "", addInst->getNextNode());
-
-						StoreInst *last = new StoreInst(intCast, secBlock,
-								false, intCast->getNextNode());
-
-						LoadInst *load = new LoadInst(secBlock, "", false, last->getNextNode());
-						funcManager.insertAddMemoryBlockCall(load->getNextNode(), load);
-						*/
 					}
 				}
 			}
