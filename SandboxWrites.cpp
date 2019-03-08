@@ -85,7 +85,6 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			// and not source code which implements system calls like printf.
 			continue;
 		}
-		count++;
 		//errs()<<count<<": "<<func->getName()<<"\n";
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
@@ -99,6 +98,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 				// the memory address of the allocated memory
 				if (isa<AllocaInst>(Inst))
 				{
+
 					AllocaInst *allocaInst = dyn_cast<AllocaInst>(Inst);
 					Instruction* finalInst = UpdateStackPointers(allocaInst, &typeManager);
 
@@ -114,6 +114,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 
 				if (isa<StoreInst>(Inst))
 				{
+
 					StoreInst *inst = dyn_cast<StoreInst>(Inst);
 					LoadInst *heapLower;
 					LoadInst *heapUpper;
@@ -125,13 +126,15 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					// Break since current iterator is invalidated after
 					// we split a basic block.
 					break;
+
 				}
 
 				if (isa<CallInst>(Inst))
 				{
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
-					if (funcManager.isMallocCall(callInst))
+					if (funcManager.isMallocCall(callInst) && count <= 2)
 					{
+						count++;
 						errs() << "LLVM_Malloc\n";
 						Value *args = funcManager.
 								extractMallocArgs(callInst);

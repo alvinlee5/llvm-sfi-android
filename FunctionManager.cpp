@@ -891,17 +891,17 @@ void FunctionManager::defineMalloc()
 	BranchInst::Create(label_210, label_202, int1_261, label_201);
 
 	// Block  (label_202)
-/*
+
 	// Test for mallocing at a specific starting address (0x30000) to test if the
 	// insertion/replacement actually works (print the address to see if its 0x3000c)
 	// 0x3000c because llvm_malloc returns the address after the free.mem.block struct
     ConstantInt* addrToMapMem = ConstantInt::get(m_pMod->getContext(), APInt(64, StringRef("196608"), 10));
 	Constant* ptrToMmapAddr = ConstantExpr::getCast(Instruction::IntToPtr, addrToMapMem, voidPtrType);
-*/
+
 	StoreInst* void_263 = new StoreInst(int_val_1, m_pHaveAllocedMem, false, label_202);
 	void_263->setAlignment(4);
 	std::vector<Value*> ptr_264_params;
-	ptr_264_params.push_back(voidPtrNull/*ptrToMmapAddr*/);
+	ptr_264_params.push_back(/*voidPtrNull*/ptrToMmapAddr);
 	ptr_264_params.push_back(allocMem_5Pages);
 	ptr_264_params.push_back(int_val_3);
 	ptr_264_params.push_back(int_val_34);
