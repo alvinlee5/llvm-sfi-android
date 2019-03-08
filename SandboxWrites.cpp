@@ -36,6 +36,8 @@ namespace {
     void SandBoxWrites(Module *pMod, StoreInst* inst, Function::iterator *BB,
     		Value* upperBound, Value* lowerBound);
     void InsertGlobalVars(Module *pMod, TypeManager* typeManager);
+    void GetSFIRegion(LoadInst** heapLower, LoadInst** heapUpper,
+    		LoadInst** stackBot, LoadInst** stackTop, StoreInst* inst);
     Instruction* UpdateStackPointers(AllocaInst* allocaInst, TypeManager *pTm/*, FunctionManager* pFm*/);
 
     // Make inserted globals members for now for easy access
@@ -231,6 +233,44 @@ Instruction* SandboxWritesPass::UpdateStackPointers(AllocaInst* allocaInst, Type
 	// basic block and instruction iterators so we
 	// don't instrument our own inserted code.
 	return storeStackAddr2;
+}
+
+/*** Function summary - SandboxWritesPass::GetHeapRegion ***
+Takes in a module and a StoreInst and inserts instructions
+to compute the upper and lower address range of the SFI
+heap region and returns those values.
+
+@Inputs:
+- inst: pointer to a (store) instruction
+
+@brief
+An if statement is wrapped around the (store) instruction, and the
+write only takes place if it is within the upper/lower bound address
+range
+
+@Outputs:
+- lowerBound: lower bound of heap address range to be passed to SandBoxWrites()
+- upperBound: upper bound of heap address range to be passed to SandBoxWrites()
+*/
+void SandboxWritesPass::GetSFIRegion(LoadInst** heapLower, LoadInst** heapUpper,
+		LoadInst** stackBot, LoadInst** stackTop, StoreInst* inst)
+{
+	LoadInst* loadHeapLower = new LoadInst(m_pPtrToHeap, "", false, inst);
+	loadHeapLower->setAlignment(4);
+
+	LoadInst* loadHeapUpper = new LoadInst(m_pPtrToHeapTop, "", false, inst);
+	loadHeapUpper->setAlignment(4);
+
+	LoadInst* loadStackBot = new LoadInst(m_pStackBot, "", false, inst);
+	loadStackBot->setAlignment(4);
+
+	LoadInst* loadStackTop = new LoadInst(m_pStackTop, "", false, inst);
+	loadStackTop->setAlignment(4);
+
+	*heapLower = loadHeapLower;
+	*heapUpper = loadHeapUpper;
+	*stackBot = loadStackBot;
+	*stackTop = loadStackTop;
 }
 
 /*** Function summary - SandboxWritesPass::SandBoxWrites ***
