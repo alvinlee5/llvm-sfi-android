@@ -70,12 +70,20 @@ bool SandboxWritesPass::runOnModule(Module &M)
 		StringRef funcName5("llvm_scan_merge");
 		StringRef funcName6("llvm_free");
 
+		// This is a workaround -- for some reason instrumenting this function
+		// will cause issues with strings (seems that the null terminator
+		// location gets messed up [speculation]).
+		// Ideally we should not be instrumenting source code that isn't
+		// written by the Android developer anyways...
+		StringRef funcName7("_ZNSt6__ndk111char_traitsIcE6assignERcRKc");
+
 		if ((func->getName()).equals(funcName1)||
 				(func->getName()).equals(funcName2)||
 				(func->getName()).equals(funcName3)||
 				(func->getName()).equals(funcName4) ||
 				(func->getName()).equals(funcName5) ||
-				(func->getName()).equals(funcName6))
+				(func->getName()).equals(funcName6) ||
+				(func->getName()).equals(funcName7))
 		{
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
@@ -85,15 +93,15 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			// and not source code which implements system calls like printf.
 			continue;
 		}
-		//errs()<<count<<": "<<func->getName()<<"\n";
+		errs()<<count<<": "<<func->getName()<<"\n";
+		count++;
 		for (Function::iterator BB = F->begin(), FE = F->end(); BB != FE; ++BB)
 		{
-			//errs()<<"New BB \n";
+			errs()<<"New BB \n";
 			for (BasicBlock::iterator Inst = BB->begin(), BBE = BB->end();
 					Inst != BBE; ++Inst)
 			{
-
-
+				errs()<<*(dyn_cast<Instruction>(Inst))<<"\n";
 				// every time we allocate memory we want to store
 				// the memory address of the allocated memory
 				if (isa<AllocaInst>(Inst))
@@ -109,12 +117,10 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					Inst = finalInst->getIterator();
 					BBE = BB->end();
 					continue;
-
 				}
 
 				if (isa<StoreInst>(Inst))
 				{
-
 					StoreInst *inst = dyn_cast<StoreInst>(Inst);
 					LoadInst *heapLower;
 					LoadInst *heapUpper;
@@ -132,9 +138,9 @@ bool SandboxWritesPass::runOnModule(Module &M)
 				if (isa<CallInst>(Inst))
 				{
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
-					if (funcManager.isMallocCall(callInst) && count <= 2)
+					if (funcManager.isMallocCall(callInst)/* && count <= 2*/)
 					{
-						count++;
+						//count++;
 						errs() << "LLVM_Malloc\n";
 						Value *args = funcManager.
 								extractMallocArgs(callInst);
