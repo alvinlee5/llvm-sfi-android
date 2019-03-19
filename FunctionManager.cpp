@@ -1548,6 +1548,64 @@ bool FunctionManager::isFreeCall(CallInst* callInst)
 	return false;
 }
 
+bool FunctionManager::isNewCall(CallInst* callInst)
+{
+	Function* funcCalled = callInst->getCalledFunction();
+	if (!funcCalled)
+	{
+		Value* v = callInst->getCalledValue();
+		Value* sv = v->stripPointerCasts();
+		StringRef funcName = sv->getName();
+		// "malloc" in the new call is apparently represented
+		// by "_Znwj" in the symbol table
+		StringRef strMalloc("_Znwj");
+		if (funcName.equals(strMalloc))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	StringRef funcName = funcCalled->getName();
+	// "malloc" in the new call is apparently represented
+	// by "_Znwj" in the symbol table
+	StringRef strMalloc("_Znwj");
+	if (funcName.equals(strMalloc))
+	{
+		return true;
+	}
+	return false;
+}
+
+bool FunctionManager::isDeleteCall(CallInst* callInst)
+{
+	Function* funcCalled = callInst->getCalledFunction();
+	if (!funcCalled)
+	{
+		Value* v = callInst->getCalledValue();
+		Value* sv = v->stripPointerCasts();
+		StringRef funcName = sv->getName();
+		// "free" in the delete call is apparently represented
+		// by "_ZdlPv" in the symbol table
+		StringRef strMalloc("_ZdlPv");
+		if (funcName.equals(strMalloc))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	StringRef funcName = funcCalled->getName();
+	// "free" in the delete call is apparently represented
+	// by "_ZdlPv" in the symbol table
+	StringRef strMalloc("_ZdlPv");
+	if (funcName.equals(strMalloc))
+	{
+		return true;
+	}
+	return false;
+}
+
 Value* FunctionManager::extractMallocArgs(CallInst *callInst)
 {
 	Value *args;

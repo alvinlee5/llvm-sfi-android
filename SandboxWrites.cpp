@@ -139,7 +139,8 @@ bool SandboxWritesPass::runOnModule(Module &M)
 				if (isa<CallInst>(Inst))
 				{
 					CallInst *callInst = dyn_cast<CallInst>(Inst);
-					if (funcManager.isMallocCall(callInst)/* && count <= 2*/)
+					if ((funcManager.isMallocCall(callInst) || funcManager.isNewCall(callInst))
+							/*&& count <= 0*/)
 					{
 						//count++;
 						errs() << "LLVM_Malloc\n";
@@ -150,7 +151,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 						Inst = BI;
 
 					}
-					if (funcManager.isFreeCall(callInst))
+					if (funcManager.isFreeCall(callInst) || funcManager.isDeleteCall(callInst))
 					{
 						errs() << "LLVM_Free\n";
 						Value *args = funcManager.extractFreeArgs(callInst);
