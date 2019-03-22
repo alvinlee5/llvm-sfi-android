@@ -27,11 +27,13 @@ class FunctionManager
 		// Malloc related calls
 		bool isMallocCall(CallInst *callInst);
 		bool isFreeCall(CallInst *callInst);
+		bool isMemcpyCall(CallInst *callInst);
 		bool isNewCall(CallInst *callInst);
 		bool isDeleteCall(CallInst *callInst);
 		bool isMmapCall(CallInst *callInst);
 		Value* extractMallocArgs(CallInst *callInst);
 		Value* extractFreeArgs(CallInst *callInst);
+		Value* extractMemcpyArgs(CallInst *callInst);
 
 		// custom malloc functions
 		CallInst* insertAddMemoryBlockCall(/*InsertBefore */Instruction *inst, Value *param); // for testing

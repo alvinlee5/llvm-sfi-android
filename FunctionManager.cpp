@@ -1548,6 +1548,31 @@ bool FunctionManager::isFreeCall(CallInst* callInst)
 	return false;
 }
 
+bool FunctionManager::isMemcpyCall(CallInst* callInst)
+{
+	Function* funcCalled = callInst->getCalledFunction();
+	if (!funcCalled)
+	{
+		Value* v = callInst->getCalledValue();
+		Value* sv = v->stripPointerCasts();
+		StringRef funcName = sv->getName();
+		StringRef strFree("llvm.memcpy.p0i8.p0i8.i32");
+		if (funcName.equals(strFree))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	StringRef funcName = funcCalled->getName();
+	StringRef strFree("llvm.memcpy.p0i8.p0i8.i64");
+	if (funcName.equals(strFree))
+	{
+		return true;
+	}
+	return false;
+}
+
 bool FunctionManager::isNewCall(CallInst* callInst)
 {
 	Function* funcCalled = callInst->getCalledFunction();
@@ -1625,6 +1650,16 @@ Value* FunctionManager::extractFreeArgs(CallInst *callInst)
 	{
 		args = dyn_cast<Value>(arg);
 	}
+	return args;
+}
+
+Value* FunctionManager::extractMemcpyArgs(CallInst *callInst)
+{
+	CallSite CS(callInst);
+	Value *args;
+	// first arg is destination address
+	auto arg = CS.arg_begin();
+	args = dyn_cast<Value>(arg);
 	return args;
 }
 

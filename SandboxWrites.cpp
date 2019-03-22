@@ -33,13 +33,13 @@ namespace {
     	m_pPtrToHeapTop = NULL;
     }
     virtual bool runOnModule(Module &M);
-    void SandBoxWrites(Module *pMod, StoreInst* inst, Function::iterator *BB,
-    		Value* upperBound, Value* lowerBound);
     void SandBoxWritesV3(Module *pMod, StoreInst* inst, Function::iterator *BB,
     		Value *heapLowerBound, Value *heapUpperBound, Value *stackTop, Value *stackBot);
+    void SandboxWritesMemcpy(Module *pMod, CallInst* inst, Value* destAddr, Function::iterator *BB,
+        		Value *heapLowerBound, Value *heapUpperBound, Value *stackTop, Value *stackBot);
     void InsertGlobalVars(Module *pMod, TypeManager* typeManager);
     void GetSFIRegion(LoadInst** heapLower, LoadInst** heapUpper,
-    		LoadInst** stackBot, LoadInst** stackTop, StoreInst* inst);
+    		LoadInst** stackBot, LoadInst** stackTop, Instruction* inst);
     Instruction* UpdateStackPointers(AllocaInst* allocaInst, TypeManager *pTm/*, FunctionManager* pFm*/);
 
     // Make inserted globals members for now for easy access
@@ -142,7 +142,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 					if ((funcManager.isMallocCall(callInst) || funcManager.isNewCall(callInst))
 							/*&& count <= 0*/)
 					{
-						//count++;
+						/*count++;*/
 						errs() << "LLVM_Malloc\n";
 						Value *args = funcManager.
 								extractMallocArgs(callInst);
@@ -158,6 +158,21 @@ bool SandboxWritesPass::runOnModule(Module &M)
 						Instruction* newInst = funcManager.replaceFreeWithFree(callInst, args);
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
+					}
+					if (funcManager.isMemcpyCall(callInst))
+					{
+						errs() << "MEMCPY\n";
+						LoadInst *heapLower;
+						LoadInst *heapUpper;
+						LoadInst *stackBot;
+						LoadInst *stackTop;
+
+						GetSFIRegion(&heapLower, &heapUpper, &stackBot, &stackTop, callInst);
+						Value *args = funcManager.extractMemcpyArgs(callInst);
+						SandboxWritesMemcpy(&M, callInst, args, &BB, heapLower, heapUpper, stackTop, stackBot);
+						// Break since current iterator is invalidated after
+						// we split a basic block.
+						break;
 					}
 				}
 			}
@@ -257,10 +272,10 @@ to compute the upper and lower address range of the SFI
 heap region and returns those values.
 
 @Inputs:
-- inst: pointer to a (store) instruction
+- inst: pointer to an instruction (StoreInst OR CallInst to memcpy)
 
 @brief
-An if statement is wrapped around the (store) instruction, and the
+An if statement is wrapped around the instruction, and the
 write only takes place if it is within the upper/lower bound address
 range
 
@@ -269,7 +284,7 @@ range
 - upperBound: upper bound of heap address range to be passed to SandBoxWrites()
 */
 void SandboxWritesPass::GetSFIRegion(LoadInst** heapLower, LoadInst** heapUpper,
-		LoadInst** stackBot, LoadInst** stackTop, StoreInst* inst)
+		LoadInst** stackBot, LoadInst** stackTop, Instruction* inst)
 {
 	LoadInst* loadHeapLower = new LoadInst(m_pPtrToHeap, "", false, inst);
 	loadHeapLower->setAlignment(4);
@@ -387,95 +402,82 @@ void SandboxWritesPass::SandBoxWritesV3(Module *pMod, StoreInst* storeInst,
 	storeInst->insertBefore(branchToOriginalTail);
 }
 
-
-/*** Function summary - SandboxWritesPass::SandBoxWrites ***
-Takes in a module and an instruction, and inserts a call to mmap()
-before the given instruction.
-
-@Inputs:
-- pMod: pointer to a Module
-- inst: pointer to a (store) instruction
-- BB: address of a basic block iterator
-- upperBound: upper address bound to allow memory writes
-- lowerBound: lower address bound to allow memory writes
-
-@brief
-An if statement is wrapped around the (store) instruction, and the
-write only takes place if it is within the upper/lower bound address
-range
-
-@Outputs:
-- none
-*/
-// TODO: Currently not using arguments upperBound and lowerBound
-// Eventually these will be used for the address bounds, and
-// not the dummy address range defined inside the function
-void SandboxWritesPass::SandBoxWrites(Module *pMod, StoreInst* inst, Function::iterator *BB,
-		Value* upperBound, Value* lowerBound)
+void SandboxWritesPass::SandboxWritesMemcpy(Module *pMod, CallInst* callInst, Value* destAddr, Function::iterator *BB,
+		Value *heapLowerBound, Value *heapUpperBound, Value *stackTop, Value *stackBot)
 {
+	TerminatorInst *thenTermHeapLower;
+	TerminatorInst *elseTermHeapLower;
+
+	// This BB is where we will allow the write.
+	// Also this terminator (should) branch to thenTermHeapLower
+	TerminatorInst *thenTermHeapUpper;
+
+	TerminatorInst *thenTermStackBot;
+	TerminatorInst *thenTermStackTop;
+
 	// For now use void ptr type to store memory addresses
 	PointerType* voidPtrType = PointerType::get(IntegerType::get(pMod->getContext(), 8), 0);
 
-	// allocate memory to store upper and lower address bounds
-	AllocaInst* ptrToMemoryAddrTop = new AllocaInst(voidPtrType, 0, nullptr,
-			8, "addrRangeTop", inst);
-	AllocaInst* ptrToMemoryAddrBot = new AllocaInst(voidPtrType, 0, nullptr,
-			8, "addrRangeBot", inst);
+/*	// this is the address that will be compared (i.e. is it > and < some range)
+	CastInst *intAddrToVoid = new BitCastInst(storeInst->getOperand(1), voidPtrType,
+			"", storeInst);*/
 
-	// this is the address that will be compared (i.e. is it > and < some range)
-	CastInst *intAddrToVoid = new BitCastInst(inst->getOperand(1), voidPtrType,
-			"", inst);
+	// First if statement (i.e. if address >= heapLowerBound)
+	ICmpInst *cmpHeapLower = new ICmpInst(callInst,
+			CmpInst::Predicate::ICMP_SGE, destAddr, heapLowerBound, "");
+	SplitBlockAndInsertIfThenElse(cmpHeapLower, callInst,
+			&thenTermHeapLower, &elseTermHeapLower);
 
-	// Store the upper and lower address bounds in the allocated memory
-	StoreInst *upperAddressRange = new StoreInst(intAddrToVoid, ptrToMemoryAddrTop,
-			inst);
-	StoreInst *lowerAddressRange = new StoreInst(intAddrToVoid, ptrToMemoryAddrBot,
-								inst);
-	// Comparison variables (TODO: currently dummy for testing purposes)
-	LoadInst *upperAddrBound = new LoadInst(/*upperAddressRange->getOperand(1),*/
-			ptrToMemoryAddrTop, "", false, inst);
-	LoadInst *lowerAddrBound = new LoadInst(/*lowerAddressRange->getOperand(1),*/
-			ptrToMemoryAddrBot, "", false, inst);
+	// Second if statement (if address <= heapUpperBound)
+	ICmpInst *cmpHeapUpper = new ICmpInst(thenTermHeapLower,
+			CmpInst::Predicate::ICMP_SLE, destAddr, heapUpperBound, "");
+	thenTermHeapUpper = SplitBlockAndInsertIfThen(cmpHeapUpper, thenTermHeapLower,
+			false);
 
-	// First if statement (i.e. if address >= X)
-	ICmpInst *cmpInst = new ICmpInst(inst,
-			CmpInst::Predicate::ICMP_SGE, intAddrToVoid, lowerAddrBound, "");
-	TerminatorInst *outerIfTerm = SplitBlockAndInsertIfThen(cmpInst,
-			inst, false);
-	BasicBlock* outerIfBB = outerIfTerm->getParent();
+	// Change terminator inst of if (heapUpper) to branch to originalTail
+	// If (heapLower) -> if (heapUpper) -> originalTail
+	BasicBlock *originalTail = callInst->getParent();
+	TerminatorInst *branchToOriginalTail = BranchInst::Create(originalTail);
+	ReplaceInstWithInst(thenTermHeapUpper, branchToOriginalTail);
 
-	// Second if statement (i.e. if address <= Y)
-	ICmpInst *cmpInst2 = new ICmpInst(outerIfTerm,
-			CmpInst::Predicate::ICMP_SLE, intAddrToVoid, upperAddrBound, "");
-	BasicBlock* innerIfBB = outerIfBB->splitBasicBlock(outerIfTerm->getIterator());
+	// Branch to else (heapLower) if the 2nd if statement fails [If (!heapUpper)]
+	BasicBlock *elseHeapLowerBB = elseTermHeapLower->getParent();
+	TerminatorInst *newThenTermHeapLower = BranchInst::Create(elseHeapLowerBB);
+	ReplaceInstWithInst(thenTermHeapLower, newThenTermHeapLower);
 
-	// BB iterator is new pointing at the "Tail" of the original BasicBlock that was split:
-	// Head > If (then), else goto Tail > if (then), else goto Tail > Tail
-	*BB = inst->getParent()->getIterator();
+	// If address <= stackBot
+	ICmpInst *cmpStackBot = new ICmpInst(elseTermHeapLower,
+			CmpInst::Predicate::ICMP_SLE, destAddr, stackBot, "");
+	thenTermStackBot = SplitBlockAndInsertIfThen(cmpStackBot, elseTermHeapLower,
+			false);
 
-	// the TerminatorInst of the outerIfBlock changed after we split it
-	outerIfTerm = outerIfBB->getTerminator();
-	TerminatorInst *newOuterIfTerm = BranchInst::Create(/*ifTrue*/innerIfBB,
-			/*ifFalse*/dyn_cast<BasicBlock>(*BB), cmpInst2);
-	ReplaceInstWithInst(outerIfTerm, newOuterIfTerm);
+	TerminatorInst *branchToOriginalTail2 = BranchInst::Create(originalTail);
+	ReplaceInstWithInst(elseTermHeapLower, branchToOriginalTail2);
+
+	// If address >= stackTop
+	ICmpInst *cmpStackTop = new ICmpInst(thenTermStackBot,
+			CmpInst::Predicate::ICMP_SGE, destAddr, stackTop, "");
+	thenTermStackTop = SplitBlockAndInsertIfThen(cmpStackTop, thenTermStackBot,
+			false);
+	TerminatorInst *branchToStore = BranchInst::Create(branchToOriginalTail->getParent());
+	ReplaceInstWithInst(thenTermStackTop, branchToStore);
+
+	TerminatorInst *branchToOriginalTail3 = BranchInst::Create(originalTail);
+	ReplaceInstWithInst(thenTermStackBot, branchToOriginalTail3);
 
 	// On the next iteration of the for loop, BB iterator will increment,
 	// so we decrement here since we want to apply this same algorithm
 	// on other store instructions in the "Tail" basic block
 	// (before the decrement BB was pointing to Tail)
+	*BB = callInst->getParent()->getIterator();
 	(*BB)--;
-	inst->removeFromParent();
-	inst->insertBefore(innerIfBB->getTerminator());
 
-	// For testing, write a value to the variable  that we
-	// put inside the "if" statement
-	Constant *const_int = ConstantInt::get(Type::getInt32Ty(pMod->getContext()),
-			1234, true);
-
-	StoreInst *store_inst2 = new StoreInst(const_int, inst->getOperand(1),
-			innerIfBB->getTerminator());
+	// Do this last: Insert the storeInst before the 2nd if-then terminator
+	callInst->removeFromParent();
+	callInst->insertBefore(branchToOriginalTail);
 
 }
+
 
 void SandboxWritesPass::InsertGlobalVars(Module *pMod, TypeManager* typeManager)
 {
