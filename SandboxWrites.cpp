@@ -70,20 +70,12 @@ bool SandboxWritesPass::runOnModule(Module &M)
 		StringRef funcName5("llvm_scan_merge");
 		StringRef funcName6("llvm_free");
 
-		// This is a workaround -- for some reason instrumenting this function
-		// will cause issues with strings (seems that the null terminator
-		// location gets messed up [speculation]).
-		// Ideally we should not be instrumenting source code that isn't
-		// written by the Android developer anyways...
-		StringRef funcName7("_ZNSt6__ndk111char_traitsIcE6assignERcRKc");
-
 		if ((func->getName()).equals(funcName1)||
 				(func->getName()).equals(funcName2)||
 				(func->getName()).equals(funcName3)||
 				(func->getName()).equals(funcName4) ||
 				(func->getName()).equals(funcName5) ||
-				(func->getName()).equals(funcName6) ||
-				(func->getName()).equals(funcName7))
+				(func->getName()).equals(funcName6))
 		{
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
@@ -178,7 +170,8 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			}
 		}
 	}
-
+	// This loop does nothing, it's just to print out all functions
+	// and instructions after the pass has completed (for debugging)
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
 	{
 		Function *func = dyn_cast<Function>(F);
