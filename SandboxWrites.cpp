@@ -41,6 +41,7 @@ namespace {
     void GetSFIRegion(LoadInst** heapLower, LoadInst** heapUpper,
     		LoadInst** stackBot, LoadInst** stackTop, Instruction* inst);
     Instruction* UpdateStackPointers(AllocaInst* allocaInst, TypeManager *pTm/*, FunctionManager* pFm*/);
+    Instruction* UpdateStackPointersV2(AllocaInst* allocaInst, TypeManager *pTm/*, FunctionManager* pFm*/);
 
     // Make inserted globals members for now for easy access
     GlobalVariable *m_pFreeMemBlockHead;
@@ -70,12 +71,19 @@ bool SandboxWritesPass::runOnModule(Module &M)
 		StringRef funcName5("llvm_scan_merge");
 		StringRef funcName6("llvm_free");
 
+		StringRef funcName7("Java_lab_galaxy_yahfa_HookMain_findMethodNative");
+		StringRef funcName8("Java_lab_galaxy_yahfa_HookMain_backupAndHookNative");
+		StringRef funcName9("Java_lab_galaxy_yahfa_HookMain_ensureMethodCached");
+
 		if ((func->getName()).equals(funcName1)||
 				(func->getName()).equals(funcName2)||
 				(func->getName()).equals(funcName3)||
 				(func->getName()).equals(funcName4) ||
 				(func->getName()).equals(funcName5) ||
-				(func->getName()).equals(funcName6))
+				(func->getName()).equals(funcName6) /*||
+				(func->getName()).equals(funcName7) ||
+				(func->getName()).equals(funcName8) ||
+				(func->getName()).equals(funcName9)*/)
 		{
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
@@ -101,7 +109,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 				{
 
 					AllocaInst *allocaInst = dyn_cast<AllocaInst>(Inst);
-					Instruction* finalInst = UpdateStackPointers(allocaInst, &typeManager);
+					Instruction* finalInst = UpdateStackPointersV2(allocaInst, &typeManager);
 
 					// We absolutely don't want to instrument on the code
 					// we've inserted ourselves, so skip all basic blocks
@@ -115,6 +123,12 @@ bool SandboxWritesPass::runOnModule(Module &M)
 				if (isa<StoreInst>(Inst))
 				{
 					StoreInst *inst = dyn_cast<StoreInst>(Inst);
+					Value *val = inst->getOperand(1);
+					if (isa<GlobalVariable>(val))
+					{
+						errs()<<"Detected Global\n";
+						continue;
+					}
 					LoadInst *heapLower;
 					LoadInst *heapUpper;
 					LoadInst *stackBot;
@@ -151,7 +165,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
 					}
-					if (funcManager.isMemcpyCall(callInst))
+					if (/*funcManager.isMemcpyCall(callInst)*/false)
 					{
 						errs() << "MEMCPY\n";
 						LoadInst *heapLower;
@@ -257,6 +271,66 @@ Instruction* SandboxWritesPass::UpdateStackPointers(AllocaInst* allocaInst, Type
 	// basic block and instruction iterators so we
 	// don't instrument our own inserted code.
 	return storeStackAddr2;
+}
+
+Instruction* SandboxWritesPass::UpdateStackPointersV2(AllocaInst* allocaInst, TypeManager *pTm
+		/*, FunctionManager* pFm*/)
+{
+	TerminatorInst *thenTerm;
+	TerminatorInst *elseTerm;
+
+	Instruction *nextInst = allocaInst->getNextNode();
+
+	// update ptrToStackTop first
+	CastInst *castToVoidPtr2 = new BitCastInst(allocaInst,
+			pTm->GetVoidPtrType(),
+			"", nextInst);
+	StoreInst *storeStackAddr2 = new StoreInst(castToVoidPtr2, m_pStackTop,
+			false, nextInst);
+	storeStackAddr2->setAlignment(4);
+
+	LoadInst *loadStackBot = new LoadInst(m_pStackBot, "", false, nextInst);
+	loadStackBot->setAlignment(4);
+	ICmpInst *cmpInst = new ICmpInst(nextInst,
+			CmpInst::Predicate::ICMP_EQ, loadStackBot,
+			pTm->GetVoidPtrNull(), "");
+
+
+	// If ptrToStackBot == null
+	SplitBlockAndInsertIfThenElse(cmpInst, nextInst,
+			&thenTerm, &elseTerm);
+	CastInst *castToVoidPtr = new BitCastInst(allocaInst,
+			pTm->GetVoidPtrType(),
+			"", thenTerm);
+	StoreInst *storeStackAddr = new StoreInst(castToVoidPtr, m_pStackBot,
+			false, thenTerm);
+	storeStackAddr->setAlignment(4);
+	LoadInst *load = new LoadInst(m_pStackBot, "", false, thenTerm);
+
+	// Else
+	LoadInst *loadStackBot2 = new LoadInst(m_pStackBot, "", false, elseTerm);
+	loadStackBot2->setAlignment(4);
+	LoadInst *loadStackTop = new LoadInst(m_pStackTop, "", false, elseTerm);
+	loadStackTop->setAlignment(4);
+	ICmpInst *cmpInst2 = new ICmpInst(elseTerm,
+			CmpInst::Predicate::ICMP_SLE, loadStackBot2,
+			loadStackTop, "");
+
+	// If ptrToStackBot <= ptrToStacktop
+	TerminatorInst *ifTerm2 = SplitBlockAndInsertIfThen(cmpInst2,
+			elseTerm, false);
+	CastInst *castToVoidPtr3 = new BitCastInst(allocaInst,
+			pTm->GetVoidPtrType(),
+			"", ifTerm2);
+	StoreInst *storeStackAddr3 = new StoreInst(castToVoidPtr3, m_pStackBot,
+			false, ifTerm2);
+	storeStackAddr3->setAlignment(4);
+
+	// For testing
+/*	LoadInst *load123 = new LoadInst(m_pStackBot, "", false, ifTerm2);
+	pFm->insertPrintfCall(load123, true, ifTerm2);*/
+
+	return elseTerm;
 }
 
 /*** Function summary - SandboxWritesPass::GetHeapRegion ***
