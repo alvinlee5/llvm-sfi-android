@@ -901,7 +901,7 @@ void FunctionManager::defineMalloc()
 	StoreInst* void_263 = new StoreInst(int_val_1, m_pHaveAllocedMem, false, label_202);
 	void_263->setAlignment(4);
 	std::vector<Value*> ptr_264_params;
-	ptr_264_params.push_back(/*voidPtrNull*/ptrToMmapAddr);
+	ptr_264_params.push_back(voidPtrNull/*ptrToMmapAddr*/);
 	ptr_264_params.push_back(allocMem_5Pages);
 	ptr_264_params.push_back(int_val_3);
 	ptr_264_params.push_back(int_val_34);
