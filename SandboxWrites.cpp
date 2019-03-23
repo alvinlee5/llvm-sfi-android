@@ -123,11 +123,24 @@ bool SandboxWritesPass::runOnModule(Module &M)
 				if (isa<StoreInst>(Inst))
 				{
 					StoreInst *inst = dyn_cast<StoreInst>(Inst);
-					Value *val = inst->getOperand(1);
+					Value *val = inst->getPointerOperand();
 					if (isa<GlobalVariable>(val))
 					{
 						errs()<<"Detected Global\n";
 						continue;
+					}
+					else
+					{
+
+						// For some reason isa<StoreInst> check will fail
+						// So we have a backup check here using the name of the gvar
+						StringRef gvarName = val->getName();
+						GlobalVariable *gVar = M.getNamedGlobal(gvarName);
+						if (gVar)
+						{
+							errs()<<"Detected Global\n";
+							continue;
+						}
 					}
 					LoadInst *heapLower;
 					LoadInst *heapUpper;
@@ -165,7 +178,7 @@ bool SandboxWritesPass::runOnModule(Module &M)
 						BasicBlock::iterator BI(newInst);
 						Inst = BI;
 					}
-					if (/*funcManager.isMemcpyCall(callInst)*/false)
+					if (funcManager.isMemcpyCall(callInst))
 					{
 						errs() << "MEMCPY\n";
 						LoadInst *heapLower;
@@ -184,6 +197,11 @@ bool SandboxWritesPass::runOnModule(Module &M)
 			}
 		}
 	}
+	for (const GlobalVariable &I : M.globals())
+	{
+		errs()<<"Gvar: "<<I<<"\n";
+	}
+
 	// This loop does nothing, it's just to print out all functions
 	// and instructions after the pass has completed (for debugging)
 	for (Module::iterator F = M.begin(), ME = M.end(); F != ME; ++F)
