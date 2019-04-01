@@ -71,19 +71,17 @@ bool SandboxWritesPass::runOnModule(Module &M)
 		StringRef funcName5("llvm_scan_merge");
 		StringRef funcName6("llvm_free");
 
-		StringRef funcName7("Java_lab_galaxy_yahfa_HookMain_findMethodNative");
-		StringRef funcName8("Java_lab_galaxy_yahfa_HookMain_backupAndHookNative");
-		StringRef funcName9("Java_lab_galaxy_yahfa_HookMain_ensureMethodCached");
+		// don't instrument the function that measures
+		// execution time
+		StringRef funcName7("_ZL6now_msv");
 
 		if ((func->getName()).equals(funcName1)||
 				(func->getName()).equals(funcName2)||
 				(func->getName()).equals(funcName3)||
 				(func->getName()).equals(funcName4) ||
 				(func->getName()).equals(funcName5) ||
-				(func->getName()).equals(funcName6) /*||
-				(func->getName()).equals(funcName7) ||
-				(func->getName()).equals(funcName8) ||
-				(func->getName()).equals(funcName9)*/)
+				(func->getName()).equals(funcName6) ||
+				(func->getName()).equals(funcName7))
 		{
 			// We don't want to instrument on our own inserted functions.
 			// We don't want to instrument on system calls either. Even though
